@@ -1,0 +1,68 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2018, Bilal Ghayad and contributors
+# For license information, please see license.txt
+
+from __future__ import unicode_literals
+import frappe
+from frappe.model.document import Document, _
+#from erpnext.controllers.selling_controller import SellingController
+from frappe import utils
+from erpnext.accounts.utils import get_outstanding_invoices, get_account_currency, get_balance_on
+
+
+class ClearanceWithDriver(Document):
+#class ClearanceWithDriver(SellingController):
+
+#	pass
+
+        def validate(self):
+                self.title = self.driver_name
+#		self.clearance_date = utils.now()
+#                if (self.credit_amount > 0 and self.money_collection > 0):
+#                	frappe.throw(_("Can not set money collection amount > 0 if credit amount > 0, please correct"))
+
+
+@frappe.whitelist()
+def get_values(driver, clearance_date):
+
+#	frappe.msgprint(_("Welcome: {0}"). format(AssignedDriver))
+
+	MoneyCollectionDriverAccount = frappe.db.get_value('Employee', {'name': driver}, 'money_collection_account')
+	CashWithHim = get_balance_on(MoneyCollectionDriverAccount, date=clearance_date)
+# Still last payment need modification, it has to get the last payment for the employee, so it is required to get the money collection account of the employee.
+        LastPayment =  frappe.db.sql("""select creation from `tabPayment Entry` order by creation desc limit 1""", as_dict=True)
+# Still need to confirm if the date to be the last modified or the created, and it is required to set the clearance date based on that.
+	LastClearance = frappe.db.sql("""select modified from `tabClearance With Driver` where docstatus = 0 order by modified desc limit 1""", as_dict=True)
+	to_statement = frappe.db.sql(""" select name, title, creation, grand_total, cash_amount, credit_amount, driver_clearance_status from `tabTrip Order`
+			where driver_clearance_status not like "Yes" and driver_clearance_status is not NULL and docstatus = 1 
+			order by creation desc limit 5""", as_dict=True)
+
+
+#	frappe.msgprint(_("Length LastClearance: {0}"). format(len(LastClearance)))
+#	frappe.msgprint(_("TO Statement: {0}"). format(to_statement))
+
+#	if len(LastClearance) == 0:
+#		LastClearanceDate = " "
+#	else:
+#		LastClearanceDate = LastClearance[0]['modified']
+
+
+#	if len(LastPayment) == 0:
+#		LastPaymentDate = " "
+#	else:
+#		LastPaymentDate = LastPayment[0]['creation']
+
+#	else:
+#		Note = "There is previous clearance"
+
+#	frappe.msgprint(_("LastClearance If Length is zero: {0}"). format(LastClearance))
+
+#	if LastClearance[0]['modified'] == "":
+#		LastClearance[0]['modified'] = utils.now()
+
+#	frappe.msgprint(_("Trip Orders Statement: {0}"). format(to_statement))
+
+
+#        return MoneyCollectionDriverAccount, CashWithHim, LastPaymentDate, LastClearanceDate, to_statement
+#        return MoneyCollectionDriverAccount, CashWithHim, LastPayment[0]['creation'], to_statement
+        return MoneyCollectionDriverAccount, CashWithHim, LastPayment, LastClearance, to_statement

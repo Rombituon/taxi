@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include taxi *.css
+recursive-include taxi *.csv
+recursive-include taxi *.html
+recursive-include taxi *.ico
+recursive-include taxi *.js
+recursive-include taxi *.json
+recursive-include taxi *.md
+recursive-include taxi *.png
+recursive-include taxi *.py
+recursive-include taxi *.svg
+recursive-include taxi *.txt
+recursive-exclude taxi *.pyc

@@ -1,0 +1,25 @@
+// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// License: GNU General Public License v3. See license.txt
+
+// render
+frappe.listview_settings['Commission Rule'] = {
+        add_fields: ["title", "commission_percent", "weekly_fees"],
+        get_indicator: function(doc) {
+                if(doc.docstatus==0) {
+//                if(cint(doc.is_return)==1) {
+//                        return [__("Return"), "darkgrey", "is_return,=,Yes"];
+                        return [__("Enabled"), "blue"];
+//                } else if(flt(doc.outstanding_amount)==0) {
+//                      return [__("KoKo"), "green", "outstanding_amount,=,0"]
+//                        return [__("Paid"), "green", "outstanding_amount,=,0"]
+//                } else if(flt(doc.outstanding_amount) < 0) {
+//                        return [__("Credit Note Issued"), "darkgrey", "outstanding_amount,<,0"]
+//                }else if (flt(doc.outstanding_amount) > 0 && doc.due_date >= frappe.datetime.get_today()) {
+//                      return [__("KoKi"), "orange", "outstanding_amount,>,0|due_date,>,Today"]
+//                        return [__("Unpaid"), "orange", "outstanding_amount,>,0|due_date,>,Today"]
+//                } else if (flt(doc.outstanding_amount) > 0 && doc.due_date < frappe.datetime.get_today()) {
+//                        return [__("Overdue"), "red", "outstanding_amount,>,0|due_date,<=,Today"]
+                }
+        },
+        right_column: "weekly_fees"
+};
