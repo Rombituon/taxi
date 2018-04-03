@@ -14,6 +14,7 @@ from erpnext.controllers.accounts_controller import AccountsController
 from erpnext.accounts.general_ledger import make_gl_entries
 
 # test
+# New test for merge
 #class ClearanceWithDriver(Document):
 class ClearanceWithDriver(AccountsController):
 #class ClearanceWithDriver(SellingController):
