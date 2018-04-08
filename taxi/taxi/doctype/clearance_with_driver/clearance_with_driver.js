@@ -91,12 +91,6 @@ frappe.ui.form.on('Clearance With Driver', {
 		if (cur_frm.doc.driver && cur_frm.doc.clearance_date) {
 			ClearVariables(frm);
 			get_driver_info(frm);
-//			var driver_id = cur_frm.doc.driver;
-//			cur_frm.set_value("driver", "");
-//			cur_frm.set_value("driver", driver_id);
-//			frappe.model.get_value('Employee', cur_frm.doc.driver, 'employment_type');
-//			cur_frm.set_value('employment_type', emp_type);
-//			frm.add_fetch('driver', 'employment_type', 'employment_type');
 			GetClrVehStrt(frm);
 			get_values(frm);
 		}
