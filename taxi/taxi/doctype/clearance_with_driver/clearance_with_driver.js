@@ -107,7 +107,10 @@ var get_driver_info = function(frm) {
                         "driver": frm.doc.driver,
                 },
                 callback: function(r) {
-			cur_frm.set_value("employment_type", r.message);
+			if (r.message) {
+				cur_frm.set_value("employment_type", r.message[0]);
+				cur_frm.set_value("driver_name", r.message[1]);
+			}
 		}
 	})
 }

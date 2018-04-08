@@ -255,7 +255,11 @@ class ClearanceWithDriver(AccountsController):
 @frappe.whitelist()
 def get_driver_info(driver):
 
-	return frappe.db.get_value('Employee', {'name': driver}, 'employment_type')
+
+	emp_type = frappe.db.get_value('Employee', {'name': driver}, 'employment_type')
+	emp_name = frappe.db.get_value('Employee', {'name': driver}, 'employee_name')
+
+	return emp_type, emp_name
 
 @frappe.whitelist()
 def GetClrVehStrt(driver, clearance_date=None):
