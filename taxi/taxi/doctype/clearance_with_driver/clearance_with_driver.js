@@ -90,11 +90,33 @@ frappe.ui.form.on('Clearance With Driver', {
 
 		if (cur_frm.doc.driver && cur_frm.doc.clearance_date) {
 			ClearVariables(frm);
+			get_driver_info(frm);
+//			var driver_id = cur_frm.doc.driver;
+//			cur_frm.set_value("driver", "");
+//			cur_frm.set_value("driver", driver_id);
+//			frappe.model.get_value('Employee', cur_frm.doc.driver, 'employment_type');
+//			cur_frm.set_value('employment_type', emp_type);
+//			frm.add_fetch('driver', 'employment_type', 'employment_type');
 			GetClrVehStrt(frm);
 			get_values(frm);
 		}
 	}
 });
+
+
+
+var get_driver_info = function(frm) {
+
+        frappe.call({
+                method: "taxi.taxi.doctype.clearance_with_driver.clearance_with_driver.get_driver_info",
+                args: {
+                        "driver": frm.doc.driver,
+                },
+                callback: function(r) {
+			cur_frm.set_value("employment_type", r.message);
+		}
+	})
+}
 
 
 var GetClrVehStrt = function(frm) {
@@ -127,8 +149,8 @@ var GetClrVehStrt = function(frm) {
                                 cur_frm.set_value("cash_with_him", r.message[4]);
 				var lastpayment = r.message[1];
 				if (lastpayment[0]) {
-					frappe.msgprint(__("Last Payment Date: {0}", [r.message[1][0]['modified']]));
-                                	cur_frm.set_value("last_payment_date", r.message[1][0]['modified']);
+					frappe.msgprint(__("Last Payment Date: {0}", [r.message[1][0]['posting_date']]));
+                                	cur_frm.set_value("last_payment_date", r.message[1][0]['posting_date']);
 				}
 				else			
                                 	cur_frm.set_value("last_payment_date", "");
@@ -143,7 +165,7 @@ var GetClrVehStrt = function(frm) {
 				}
 //				if (r.message[1][0]['modified'] == "") {
 				if (last_clr[0]) {
-					cur_frm.set_value("last_clearance_date", r.message[2][0]['modified']);
+					cur_frm.set_value("last_clearance_date", r.message[2][0]['clearance_date']);
 					cur_frm.set_value("join_date", "");
 				}
 				else {

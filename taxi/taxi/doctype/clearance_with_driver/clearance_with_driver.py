@@ -32,13 +32,26 @@ class ClearanceWithDriver(AccountsController):
         def on_cancel(self):
                 delete_gl_entries(voucher_type=self.doctype, voucher_no=self.name)
 
+		to_clr_count = frappe.db.sql("""update `tabTrip Order` set driver_clearance_status = "No"
+			where name in (select trip_order from `tabDriver Clearance Trips Orders` where parent = %s)
+			""", (self.name), as_dict=True)
+
 
         def on_submit(self):
 		if not (self.receiving_payment_account) or not (self.account_paid_from) or not (self.expenses_account) :
                 	frappe.throw(_("All Transactions Accounts need to be filled to be able to submit"))
+
+		self.update_to_clearance()
 		
 		self.posting_date = self.clearance_date
 		self.make_gl_entries()
+
+
+	def update_to_clearance(self):
+
+		to_clr_count = frappe.db.sql("""update `tabTrip Order` set driver_clearance_status = "Yes"
+			where name in (select trip_order from `tabDriver Clearance Trips Orders` where parent = %s)
+			""", (self.name), as_dict=True)
 
 
 	def make_gl_entries(self):
@@ -239,6 +252,10 @@ class ClearanceWithDriver(AccountsController):
 
 
 
+@frappe.whitelist()
+def get_driver_info(driver):
+
+	return frappe.db.get_value('Employee', {'name': driver}, 'employment_type')
 
 @frappe.whitelist()
 def GetClrVehStrt(driver, clearance_date=None):
@@ -263,18 +280,18 @@ def GetClrVehStrt(driver, clearance_date=None):
         ClrStrtDate = datetime.combine(ClrStrtDate, datetime.min.time())
         ClrStrtDate = ClrStrtDate.replace(hour=00, minute=01, second=00)
 
-        LastClr = frappe.db.sql("""select modified from `tabClearance With Driver` where driver = %s and docstatus = 1
-		order by modified desc limit 1""", (driver), as_dict=True)
+        LastClr = frappe.db.sql("""select clearance_date from `tabClearance With Driver` where driver = %s and docstatus = 1
+		order by clearance_date desc limit 1""", (driver), as_dict=True)
 
         if (len(LastClr) > 0):
-                ClrStrtDate = LastClr[0]['modified']
+                ClrStrtDate = LastClr[0]['clearance_date']
 
 #        LastPayment =  frappe.db.sql("""select creation from `tabPayment Entry` order by creation desc limit 1""", as_dict=True)
 
-        LastPayment = frappe.db.sql(""" select modified from `tabPayment Entry`
+        LastPayment = frappe.db.sql(""" select posting_date from `tabPayment Entry`
                                 where payment_type = "Internal Transfer" and paid_from = (select money_collection_account from `tabEmployee` where name = %s)
                                 and paid_to in (select default_cash_account from `tabCompany`)
-                                and docstatus = 1 order by modified desc limit 1
+                                and docstatus = 1 order by posting_date desc limit 1
                                 """, (driver), as_dict=True)
 
 
@@ -311,55 +328,56 @@ def get_values(driver, clearance_date):
                                 """, (driver), as_dict=True)
 
 
-        LastPayment = frappe.db.sql(""" select modified from `tabPayment Entry`
+        LastPayment = frappe.db.sql(""" select posting_date from `tabPayment Entry`
                                 where payment_type = "Internal Transfer" and paid_from = (select money_collection_account from `tabEmployee` where name = %s)
                                 and paid_to in (select default_cash_account from `tabCompany`)
-                                and docstatus = 1 order by modified desc limit 1
+                                and docstatus = 1 order by posting_date desc limit 1
                                 """, (driver), as_dict=True)
 # Still need to confirm if the date to be the last modified or the created, and it is required to set the clearance date based on that.
 
-	LastClearance = frappe.db.sql("""select modified from `tabClearance With Driver` where driver = %s and docstatus = 1 
-			order by modified desc limit 1""", (driver), as_dict=True)
+	LastClearance = frappe.db.sql("""select clearance_date from `tabClearance With Driver` where driver = %s and docstatus = 1 
+			order by clearance_date desc limit 1""", (driver), as_dict=True)
 
 	if (len(LastClearance) > 0):
-		clr_strt_date = LastClearance[0]['modified']
+		clr_strt_date = LastClearance[0]['clearance_date']
 
 
-	to_statement = frappe.db.sql("""select name, title, creation, grand_total, cash_amount, credit_amount, driver_clearance_status from `tabTrip Order`
-			where assigned_driver = %s and modified < %s and driver_clearance_status not like "Yes" and driver_clearance_status is not NULL 
-			and docstatus = 1 order by creation desc limit 5""", (driver, clearance_date), as_dict=True)
+	to_statement = frappe.db.sql("""select name, title, transaction_date, grand_total, cash_amount, credit_amount, driver_clearance_status from `tabTrip Order`
+			where assigned_driver = %s and transaction_date <= %s and driver_clearance_status not like "Yes" and driver_clearance_status is not NULL 
+			and docstatus = 1 order by transaction_date desc limit 5""", (driver, clearance_date), as_dict=True)
 
 	maint_statement = frappe.db.sql("""select name, total_claimed_amount, total_sanctioned_amount, vehicle_log, employee 
-			from `tabExpense Claim` where employee = %s and modified > %s and modified < %s  and docstatus = 1
+			from `tabExpense Claim` where employee = %s and posting_date > %s and posting_date <= %s  and docstatus = 1
 			""", (driver, clr_strt_date, clearance_date), as_dict=True)
 
 	total_maint = frappe.db.sql("""select sum(total_sanctioned_amount) as sum_total_sanctioned 
-			from `tabExpense Claim` where employee = %s and modified > %s and modified < %s  and docstatus = 1
+			from `tabExpense Claim` where employee = %s and posting_date > %s and posting_date <= %s  and docstatus = 1
 			""", (driver, clr_strt_date, clearance_date), as_dict=True)
 
 
 	maint_exp_claim = frappe.db.sql(""" select name from `tabExpense Claim` 
-			where employee = %s and modified > %s and modified < %s  and docstatus = 1
+			where employee = %s and posting_date > %s and posting_date <= %s and docstatus = 1
 			""", (driver, clr_strt_date, clearance_date), as_dict=True)
 
 
 	total_paid_maint = frappe.db.sql(""" select COALESCE(sum(total_allocated_amount),0) as total_maint from `tabPayment Entry`
 				where name in (select parent from `tabPayment Entry Reference` where reference_name in 
-				(select name from `tabExpense Claim` where employee = %s and  modified > %s and modified < %s  and docstatus = 1))
+				(select name from `tabExpense Claim` where employee = %s and docstatus = 1))
+				and posting_date > %s and posting_date <= %s and docstatus = 1
 				""", (driver, clr_strt_date, clearance_date), as_dict=True)
 
 
 	total_mon_col_out_order = frappe.db.sql(""" select COALESCE(sum(received_amount),0) as total_col_mon_out from `tabPayment Entry`
 				where payment_type = "Receive" and paid_to = (select money_collection_account from `tabEmployee` where name = %s) 
-				and party_type = "Customer" and docstatus = 1 and modified > %s and modified < %s
+				and party_type = "Customer" and posting_date > %s and posting_date <= %s and docstatus = 1
 				""", (driver, clr_strt_date, clearance_date), as_dict=True)
 
 
         total_delivered_mon = frappe.db.sql(""" select COALESCE(sum(received_amount),0) as total_delivered_mon from `tabPayment Entry`
                                 where payment_type = "Internal Transfer" and paid_from = (select money_collection_account from `tabEmployee` where name = %s)
                                 and paid_to in (select default_cash_account from `tabCompany`)
-                                and docstatus = 1
-                                """, (driver), as_dict=True)
+                                and  posting_date > %s and posting_date <= %s and docstatus = 1
+                                """, (driver, clr_strt_date, clearance_date), as_dict=True)
 
 
 #	frappe.msgprint(_("Clearance Start Date: {0}"). format(clr_strt_date))
