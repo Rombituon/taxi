@@ -9,9 +9,9 @@ from frappe.model.document import Document, _
 from frappe import utils
 from erpnext.accounts.utils import get_outstanding_invoices, get_account_currency, get_balance_on
 from datetime import datetime, date
-from erpnext.accounts.general_ledger import delete_gl_entries
 from erpnext.controllers.accounts_controller import AccountsController
 from erpnext.accounts.general_ledger import make_gl_entries
+from erpnext.accounts.general_ledger import delete_gl_entries
 
 # test for merge
 #class ClearanceWithDriver(Document):

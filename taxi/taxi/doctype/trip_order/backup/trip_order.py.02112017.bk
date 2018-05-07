@@ -1,0 +1,39 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2017, Bilal Ghayad and contributors
+# For license information, please see license.txt
+
+from __future__ import unicode_literals
+import frappe
+from frappe.model.document import Document
+
+class TripOrder(Document):
+	pass
+
+#	def onload(self):
+
+#		self.discounted_hop_no = frappe.db.get_single_value('Route Pricing Settings', 'hop_no_discounted')
+
+#		self.hop_no_discounted  = frappe.db.get_value("Route Pricing Settings", "hop_no_discounted")
+#		self.hop_no_discounted = frappe.db.sql("""
+#                select hop_no_discounted from `tabRoute Pricing Settings`
+#                where status = 'Active'
+#                and (relieving_date is NULL or relieving_date >= %(from_date)s)
+#                """, {"from_date": from_period}, as_dict=True)
+#		self.hop_no_discounted  = 3
+
+@frappe.whitelist()
+def get_settings():
+
+	DiscountedHopNo  = frappe.db.get_single_value('Route Pricing Settings', 'hop_no_discounted')
+	HopNoToReturnForNormalRating  = frappe.db.get_single_value('Route Pricing Settings', 'return_to_normal_rating_hop_no')
+	PriceForSecondHop  = frappe.db.get_single_value('Route Pricing Settings', 'second_hop_price')
+
+#	no_hop = 4
+
+	return DiscountedHopNo, HopNoToReturnForNormalRating, PriceForSecondHop
+
+
+@frappe.whitelist()
+def get_vehicle(AssignedDriver):
+	assigned_vehicle = frappe.db.get_value('Vehicle', {'employee': AssignedDriver}, 'name')
+	return assigned_vehicle

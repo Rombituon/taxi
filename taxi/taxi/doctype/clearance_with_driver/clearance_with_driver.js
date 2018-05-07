@@ -37,7 +37,8 @@ frappe.ui.form.on('Clearance With Driver', {
                 frm.set_query("receiving_payment_account", function(doc) {
                         return {
                                 filters: {
-                                        'root_type': 'Asset',
+					'account_type': 'Cash',
+					'is_group': 0,
                                         'company': frm.doc.company
                                 }
                         };
@@ -46,7 +47,8 @@ frappe.ui.form.on('Clearance With Driver', {
                 frm.set_query("account_paid_from", function(doc) {
                         return {
                                 filters: {
-                                        'root_type': 'Asset',
+					'account_type': 'Cash',
+					'is_group': 0,
                                         'company': frm.doc.company
                                 }
                         };
@@ -56,6 +58,7 @@ frappe.ui.form.on('Clearance With Driver', {
                         return {
                                 filters: {
                                         'root_type': 'Expense',
+					'is_group': 0,
                                         'company': frm.doc.company
                                 }
                         };
@@ -211,12 +214,12 @@ var get_values = function(frm) {
 					else {
 	                        		cur_frm.set_value("maintenance_amount", 0);
 //                                                cur_frm.set_value("amount_due_to_driver", 0);
-                                                cur_frm.set_value("no_of_driver_due_weekly_fees", cur_frm.doc.duration_clearance / 7);
+                                                cur_frm.set_value("no_of_driver_due_weekly_fees", flt(cur_frm.doc.duration_clearance) / 7);
 	                               		cur_frm.set_value("assign_com_rule", r.message[12][0]['name']);
 						cur_frm.set_value('commission_rule', r.message[12][0]['commission_rule']);
 						cur_frm.set_value('commission_percent', r.message[12][0]['commission_percent']);
 						cur_frm.set_value('weekly_fees', r.message[12][0]['weekly_fees']);
-                                                cur_frm.set_value("driver_commission_amount", flt(cur_frm.doc.total_orders_amount) * 25 * (1-flt(cur_frm.doc.commission_percent)/100));
+                                                cur_frm.set_value("driver_commission_amount", flt(cur_frm.doc.total_orders_amount) * (1-flt(cur_frm.doc.commission_percent)/100));
                                                 cur_frm.set_value("driver_due_weekly_fees", flt(cur_frm.doc.no_of_driver_due_weekly_fees) * flt(cur_frm.doc.weekly_fees));
 
                                                 cur_frm.set_value("amount_due_to_driver_cal", cur_frm.doc.driver_commission_amount - cur_frm.doc.driver_due_weekly_fees);
@@ -251,7 +254,7 @@ var filling_and_calculation = function(frm, statement) {
 		new_row = frappe.model.add_child(cur_frm.doc, "Driver Clearance Trips Orders", "statement_of_trips_orders");
 		new_row.trip_order = row.name;
 		new_row.desc = row.title;
-		new_row.date = row.creation;
+		new_row.date = row.transaction_date;
 		new_row.amount = row.grand_total;
 		new_row.cash = row.cash_amount;
 		new_row.credit = row.credit_amount;
@@ -278,7 +281,8 @@ var filling_and_calculation = function(frm, statement) {
 		var duration_in_day = duration_in_hour / 24;
 
 		frappe.msgprint(__("Welcome Duration in Day: {0}", [duration_in_day]));
-		cur_frm.set_value("duration_clearance", duration_in_day);
+		cur_frm.set_value("duration_clearance", flt(duration_in_day));
+//		cur_frm.set_value("duration_clearance", 9);
 	}
 	else {	
 		cur_frm.set_value("duration_clearance", 0);
