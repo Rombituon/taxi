@@ -168,7 +168,7 @@ frappe.ui.form.on('Trip Order', {
 	}
 });
 
-frappe.ui.form.on('Taxi Hops', {
+frappe.ui.form.on('Trip Order Hops', {
 
 	items_remove: function(frm, cdt, cdn) {
 
@@ -190,18 +190,18 @@ frappe.ui.form.on('Taxi Hops', {
 			}
 			else {
 				item_selected.ozw_metric = item_selected.to_metric;
-				item_selected.to_metric = frm.doc.items[(item_selected.idx) - 2].to_metric;
+				item_selected.to_metric = frm.doc.hops[(item_selected.idx) - 2].to_metric;
 			}
 		}
 		else
 			item_selected.to_metric = item_selected.ozw_metric;
-		//frappe.msgprint(__("Changes happened at {0}", [frm.doc.items[(item_selected.idx) - 2].to]));
-		$.each(frm.doc.items, function(i, row) {
+		//frappe.msgprint(__("Changes happened at {0}", [frm.doc.hops[(item_selected.idx) - 2].to]));
+		$.each(frm.doc.hops, function(i, row) {
 			if (row.ozw == 1) {
 				if (flt (i) == 0)
 					row.to_metric = frm.doc.origin_metric;
 				else
-					row.to_metric = frm.doc.items[i-1].to_metric;
+					row.to_metric = frm.doc.hops[i-1].to_metric;
 			}
 		})
 		hops_calculation(frm, cdt, cdn);
@@ -220,7 +220,7 @@ var hops_calculation = function(frm, cdt, cdn) {
 		method: "taxi.taxi.doctype.trip_order.trip_order.get_settings",
 		callback: function(r) {
 			if (r.message) {
-				$.each(frm.doc.items, function(i, row) {
+				$.each(frm.doc.hops, function(i, row) {
 		  	        	if (row.to_metric) {
 						if (i < (r.message[0] - 1)) {
 							if (flt(row.to_metric) > flt(frm.doc.origin_metric)) {
@@ -231,16 +231,16 @@ var hops_calculation = function(frm, cdt, cdn) {
 							}
 						}
 						else if (i >= (r.message[1]-1)) {
-							if (flt(row.to_metric) >= flt(frm.doc.items[i-1].to_metric))
+							if (flt(row.to_metric) >= flt(frm.doc.hops[i-1].to_metric))
 								row.selected_metric = row.to_metric;
 							else
-								row.selected_metric = frm.doc.items[i-1].to_metric;
+								row.selected_metric = frm.doc.hops[i-1].to_metric;
 						}
 						else {
-							if (flt(row.to_metric) > flt(frm.doc.items[i-1].to_metric))
+							if (flt(row.to_metric) > flt(frm.doc.hops[i-1].to_metric))
 								row.selected_metric = row.to_metric;
-							else if (flt(row.to_metric) < flt(frm.doc.items[i-1].to_metric))
-								row.selected_metric = frm.doc.items[i-1].to_metric;
+							else if (flt(row.to_metric) < flt(frm.doc.hops[i-1].to_metric))
+								row.selected_metric = frm.doc.hops[i-1].to_metric;
 							else
 								row.selected_metric = r.message[2];
 						}
@@ -249,12 +249,12 @@ var hops_calculation = function(frm, cdt, cdn) {
 						else
 							row.hop_price = flt(row.selected_metric);
 						frm.set_value('total_price', frm.doc.total_price + row.hop_price);
-						refresh_field("items");
+						refresh_field("hops");
 						rows_quantity = rows_quantity + 1;
 					}
 				})
 				if ((rows_quantity-1) >= 0) {
-					frm.set_value('final_destination', frm.doc.items[rows_quantity-1].to);
+					frm.set_value('final_destination', frm.doc.hops[rows_quantity-1].to);
 				}
 				else
 					frm.set_value('final_destination', "Not Selected");
@@ -265,5 +265,5 @@ var hops_calculation = function(frm, cdt, cdn) {
 			}
 		}
 	})
-	refresh_field("items");
+	refresh_field("hops");
 }
