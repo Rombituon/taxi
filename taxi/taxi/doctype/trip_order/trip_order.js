@@ -37,10 +37,26 @@ frappe.ui.form.on('Trip Order', {
 
 
         onload: function(frm) {
+
+		frm.set_query("to", "hops", function(doc, cdt, cdn) {
+			var d = locals[cdt][cdn];
+			return {
+				query: "taxi.taxi.doctype.trip_order.trip_order.get_origination"
+			}
+		});
+
                 frm.set_query("assigned_driver", function(doc) {
                         return {
                                 filters: {
                                         'status': 'Active'
+                                }
+                        };
+                });
+
+                frm.set_query("origination_place", function(doc) {
+                        return {
+                                filters: {
+                                        'item_group': 'Taxi Hop'
                                 }
                         };
                 });

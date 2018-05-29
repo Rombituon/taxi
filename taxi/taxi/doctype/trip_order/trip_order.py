@@ -148,3 +148,9 @@ def get_settings():
 def get_vehicle(AssignedDriver):
 	assigned_vehicle = frappe.db.get_value('Vehicle', {'employee': AssignedDriver}, 'name')
 	return assigned_vehicle
+
+
+@frappe.whitelist()
+def get_origination(doctype, txt, searchfield, start, page_len, filters):
+
+    return frappe.db.sql("""Select item_name from `tabItem` where item_group = "Taxi Hop" """)
