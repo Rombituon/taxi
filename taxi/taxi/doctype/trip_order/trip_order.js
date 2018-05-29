@@ -5,7 +5,7 @@ cur_frm.add_fetch('assigned_driver', 'employee_name', 'driver_name')
 cur_frm.add_fetch('assigned_driver', 'money_collection_account', 'driver_cash_account')
 cur_frm.add_fetch('origination_place','metric','origin_metric')
 cur_frm.add_fetch('to', 'metric', 'to_metric')
-cur_frm.add_fetch('customer', 'customer_classification_and_description', 'customer_classification_and_description')
+cur_frm.add_fetch('customer', 'classification', 'customer_classification_and_description')
 
 
 frappe.ui.form.on('Trip Order', {
