@@ -153,4 +153,4 @@ def get_vehicle(AssignedDriver):
 @frappe.whitelist()
 def get_origination(doctype, txt, searchfield, start, page_len, filters):
 
-    return frappe.db.sql("""Select item_name from `tabItem` where item_group = "Taxi Hop" """)
+    return frappe.db.sql("""Select item_code from `tabItem` where item_group = %s order by item_code desc""", (filters.get("itemgroup")))

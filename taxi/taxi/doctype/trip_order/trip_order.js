@@ -38,11 +38,20 @@ frappe.ui.form.on('Trip Order', {
 
         onload: function(frm) {
 
+//		frm.set_query("to", "hops", function(doc, cdt, cdn) {
+//			var d = locals[cdt][cdn];
+//			return {
+//				query: "taxi.taxi.doctype.trip_order.trip_order.get_origination",
+//				filters: {'itemgroup': 'Taxi Hop'}
+//			}
+//		});
+
 		frm.set_query("to", "hops", function(doc, cdt, cdn) {
-			var d = locals[cdt][cdn];
 			return {
-				query: "taxi.taxi.doctype.trip_order.trip_order.get_origination"
-			}
+				filters: {
+					'item_group': 'Taxi Hop'
+				}
+			};
 		});
 
                 frm.set_query("assigned_driver", function(doc) {
@@ -130,6 +139,10 @@ frappe.ui.form.on('Trip Order', {
 				}
 			})
 			cur_frm.set_value("order_status", "Assigned");
+			//frappe.msgprint(__("Changes happened at {0}", [frm.doc.hops[(item_selected.idx) - 2].to]));
+			var timetest = moment(frm.doc.test_time, "HH:mm:ss A");
+			frappe.msgprint(__("Amount value for time {0}", [timetest.hour()]));
+			frappe.msgprint(__("Amount value for time {0}", [timetest.minute()]));
 		}
 	},
 
@@ -186,7 +199,7 @@ frappe.ui.form.on('Trip Order', {
 
 frappe.ui.form.on('Trip Order Hops', {
 
-	items_remove: function(frm, cdt, cdn) {
+	hops_remove: function(frm, cdt, cdn) {
 
 		hops_calculation(frm, cdt, cdn);
 	},
@@ -194,6 +207,22 @@ frappe.ui.form.on('Trip Order Hops', {
 	to_metric: function(frm, cdt, cdn) {
 
 		hops_calculation(frm, cdt, cdn);
+	},
+
+	waiting: function(frm, cdt, cdn) {
+
+
+		frappe.msgprint(__("Welcome For selecting waiting time"));
+		var item_selected = locals[cdt][cdn];
+		
+		var waiting_time = moment(item_selected.waiting, "HH:mm:ss A");
+		var waiting_time_hr = waiting_time.hour();
+		var waiting_time_minute = waiting_time.minute();
+		frappe.msgprint(__("Minutes {0}", [waiting_time.minute()]));
+		frappe.msgprint(__("Hop Price {0}", [item_selected.hop_price]));
+//		item_selected.hop_price = item_selected.hop_price + (((waiting_time_hr / 60) + waiting_time_minute) / 15 ) * 2500;
+//		item_selected.hop_price = item_selected.hop_price + 3000;
+
 	},
 
 	ozw: function(frm, cdt, cdn) {
@@ -260,10 +289,20 @@ var hops_calculation = function(frm, cdt, cdn) {
 							else
 								row.selected_metric = r.message[2];
 						}
-						if (row.ozw == 1)
-							row.hop_price = 0;
-						else
-							row.hop_price = flt(row.selected_metric);
+						if (row.ozw == 1) {
+							var waiting_time = moment(row.waiting, "HH:mm:ss A");
+							var waiting_time_hr = waiting_time.hour();
+							var waiting_time_minute = waiting_time.minute();
+							row.hop_price = (((waiting_time_hr / 60) + waiting_time_minute) / 15 ) * 2500;
+//							row.hop_price = 0;
+							
+						}
+						else {
+							var waiting_time = moment(row.waiting, "HH:mm:ss A");
+							var waiting_time_hr = waiting_time.hour();
+							var waiting_time_minute = waiting_time.minute();
+							row.hop_price = flt(row.selected_metric) + flt((((waiting_time_hr / 60) + waiting_time_minute) / 15 ) * 2500);
+						}
 						frm.set_value('total_price', frm.doc.total_price + row.hop_price);
 						refresh_field("hops");
 						rows_quantity = rows_quantity + 1;
