@@ -212,14 +212,21 @@ frappe.ui.form.on('Trip Order Hops', {
 	waiting: function(frm, cdt, cdn) {
 
 
-		frappe.msgprint(__("Welcome For selecting waiting time"));
 		var item_selected = locals[cdt][cdn];
-		
 		var waiting_time = moment(item_selected.waiting, "HH:mm:ss A");
 		var waiting_time_hr = waiting_time.hour();
 		var waiting_time_minute = waiting_time.minute();
-		frappe.msgprint(__("Minutes {0}", [waiting_time.minute()]));
-		frappe.msgprint(__("Hop Price {0}", [item_selected.hop_price]));
+		item_selected.waiting_price = flt((((waiting_time_hr * 60) + waiting_time_minute) / 15 ) * 2500);
+		item_selected.trip_price = flt(item_selected.hop_price) + flt(item_selected.waiting_price);
+		refresh_field("hops");
+//		frappe.msgprint(__("Welcome For selecting waiting time"));
+//		var item_selected = locals[cdt][cdn];
+		
+//		var waiting_time = moment(item_selected.waiting, "HH:mm:ss A");
+//		var waiting_time_hr = waiting_time.hour();
+//		var waiting_time_minute = waiting_time.minute();
+//		frappe.msgprint(__("Minutes {0}", [waiting_time.minute()]));
+//		frappe.msgprint(__("Hop Price {0}", [item_selected.hop_price]));
 //		item_selected.hop_price = item_selected.hop_price + (((waiting_time_hr / 60) + waiting_time_minute) / 15 ) * 2500;
 //		item_selected.hop_price = item_selected.hop_price + 3000;
 
@@ -293,7 +300,9 @@ var hops_calculation = function(frm, cdt, cdn) {
 							var waiting_time = moment(row.waiting, "HH:mm:ss A");
 							var waiting_time_hr = waiting_time.hour();
 							var waiting_time_minute = waiting_time.minute();
-							row.hop_price = (((waiting_time_hr / 60) + waiting_time_minute) / 15 ) * 2500;
+							row.waiting_price = flt((((waiting_time_hr / 60) + waiting_time_minute) / 15 ) * 2500);
+							row.hop_price = 0;
+							row.trip_price = row.waiting_price;
 //							row.hop_price = 0;
 							
 						}
@@ -301,9 +310,11 @@ var hops_calculation = function(frm, cdt, cdn) {
 							var waiting_time = moment(row.waiting, "HH:mm:ss A");
 							var waiting_time_hr = waiting_time.hour();
 							var waiting_time_minute = waiting_time.minute();
-							row.hop_price = flt(row.selected_metric) + flt((((waiting_time_hr / 60) + waiting_time_minute) / 15 ) * 2500);
+							row.waiting_price = flt((((waiting_time_hr / 60) + waiting_time_minute) / 15 ) * 2500);
+							row.hop_price = flt(row.selected_metric);
+							row.trip_price = flt(row.hop_price) + flt(row.waiting_price);
 						}
-						frm.set_value('total_price', frm.doc.total_price + row.hop_price);
+						frm.set_value('total_price', frm.doc.total_price + row.trip_price);
 						refresh_field("hops");
 						rows_quantity = rows_quantity + 1;
 					}
