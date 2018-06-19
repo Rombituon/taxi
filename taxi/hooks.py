@@ -90,6 +90,16 @@ app_license = "MIT"
 # Scheduled Tasks
 # ---------------
 
+
+#scheduler_events = {
+#	"cron": {
+#		"*/3 * * * *": [
+#			"taxi.taxi.doctype.trip_order.trip_order.popup_notification"
+#		]
+#	}
+#}
+
+
 # scheduler_events = {
 # 	"all": [
 # 		"taxi.tasks.all"

@@ -6,7 +6,9 @@ cur_frm.add_fetch('assigned_driver', 'money_collection_account', 'driver_cash_ac
 cur_frm.add_fetch('origination_place','metric','origin_metric')
 cur_frm.add_fetch('to', 'metric', 'to_metric')
 cur_frm.add_fetch('customer', 'classification', 'customer_classification_and_description')
-
+//frappe.realtime.on("display_notification", function(data) {
+//	alert("Test Outside of Setup and Onlonad: " + data);
+//	});
 
 frappe.ui.form.on('Trip Order', {
 
@@ -14,6 +16,9 @@ frappe.ui.form.on('Trip Order', {
 		frm.add_fetch("company", "default_receivable_account", "receivable_account");
 		frm.add_fetch("company", "default_income_account", "income_account");
 		frm.add_fetch("company", "cost_center", "cost_center");
+//		frappe.realtime.on("display_notification", function(data) {
+//			alert("Test Message" + data);
+//		});
         },
 
 	refresh: function(frm) {
@@ -37,6 +42,12 @@ frappe.ui.form.on('Trip Order', {
 
 
         onload: function(frm) {
+//		var test = "Welcome"
+//		frappe.realtime.on("display_notification", function(data) {
+//			alert("Test Message" + data);
+//
+//		});
+
 
 //		frm.set_query("to", "hops", function(doc, cdt, cdn) {
 //			var d = locals[cdt][cdn];
@@ -123,6 +134,20 @@ frappe.ui.form.on('Trip Order', {
 				refresh_field('customer_balance');
 			}
 		});
+//		confirm("Test Message");
+//		prompt("Test Message");
+		alert("Test Message");
+//		frappe.show_alert({message: __("Added {0} ({1})", [item_code, d.qty]), indicator: 'green'});
+//		var myWindow = window.open("", "", "width=200, height=100");
+//		myWindow.document.write("<p>A new window!</p>");
+//		myWindow.focus();
+//		frappe.confirm('Testing For Confirm', function(){
+//			window.close();
+//			});
+//			function(){
+//				show_alert('Thank you for continue')
+//			});
+//		frappe.show_alert({message: __("Tesing"), indicator: 'green'});
 	},
 
 	assigned_driver: function(frm) {

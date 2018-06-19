@@ -31,9 +31,6 @@ class TripOrder(AccountsController):
 
 #	pass
 	def validate(self):
-
-		self.last_note_time = frappe.db.get_value('Trip Order', {'name': self.name}, 'last_note_time')
-		self.notified = frappe.db.get_value('Trip Order', {'name': self.name}, 'notified')
 		if not (self.customer):
 			self.title = self.origination_place + "-" + self.final_destination
 		else:
@@ -180,99 +177,32 @@ def popup_notification():
 			cur_time = datetime.datetime.now()
 			if int (d['delivery_time'].day) == cur_time.day:
 				time_diff = ((d['delivery_time'].hour - cur_time.hour) * 60 + (d['delivery_time'].minute - cur_time.minute))
-#				if time_diff < int (d['notify_before']) and time_diff > -60:
-				if time_diff < int (d['notify_before']):
-					msg_var = "Notify Before Order (before 12 PM): Please follow up Trip Order # {0} as its delivery time is: {1} for customer: {2} and the time difference is {3} and notify before is {4} for user {5}".format(d['name'], d['delivery_time'], d['customer'], time_diff, d['notify_before'], frappe.session.user)
+				if time_diff < int (d['notify_before']) and time_diff > -60:
+					msg_var = "Please follow up Trip Order # {0} as its delivery time is: {1} for customer: {2} and the time difference is {3} and notify before is {4}".format(d['name'], d['delivery_time'], d['customer'], time_diff, d['notify_before'])
 #			test_msg = "The popup reminder case is {0}".format(d['popup_reminder'])
 					frappe.publish_realtime(event='msgprint', message=msg_var, user=frappe.session.user)
 
-					to_note_count = frappe.db.sql("""update `tabTrip Order` 
-						set last_note_time = %s, notified = 'Yes'
-						where name = %s
-						""", (cur_time, d['name']), as_dict=True)
-
-					frappe.db.commit()
-
-#					frappe.db.set_value("Trip Order", d['name'], "last_note_time", cur_time)
-#					frappe.db.set_value("Trip Order", d['name'], "notified", 'Yes')
-#					frappe.publish_realtime(event='eval_js', message='refresh_field("last_note_time")')
-
 			elif int(d['delivery_time'].day) == (cur_time.day - 1):
 #				if  (int(d['delivery_time'].hour) - cur_time.hour) == 23:
-#				if  (int(d['delivery_time'].hour) - 0) == 23:
+				if  (int(d['delivery_time'].hour) - 0) == 23:
+					time_diff = (d['delivery_time'].minute - cur_time.minute)
+					if time_diff <= 59 and time_diff >= 0:
+						msg_var = "Please follow up Trip Order # {0} as its delivery time is: {1} for customer: {2} and the time difference is {3} and notify before is {4}".format(d['name'], d['delivery_time'], d['customer'], time_diff, d['notify_before'])
+						frappe.publish_realtime(event='msgprint', message=msg_var, user=frappe.session.user)
 
-#					time_diff = (cur_time.hour + 24 - d['delivery_time'].hour) * 60 + (cur_time.minute - d['delivery_time'].minute)
-#					time_diff = (d['delivery_time'].minute - cur_time.minute)
-#					if time_diff <= 120 and time_diff >= 0:
-				msg_var = "Notify Before Order (after 12 PM): Please follow up Trip Order # {0} as its delivery time is: {1} for customer: {2} and notify before is {3}".format(d['name'], d['delivery_time'], d['customer'], d['notify_before'])
-				frappe.publish_realtime(event='msgprint', message=msg_var, user=frappe.session.user)
-
-				to_note_count = frappe.db.sql("""update `tabTrip Order` 
-					set last_note_time = %s, notified = 'Yes'
-					where name = %s
-					""", (cur_time, d['name']), as_dict=True)
-
-				frappe.db.commit()
-
-			elif int(d['delivery_time'].day) == (cur_time.day + 1):
-
-				time_diff = (24 - cur_time.hour + d['last_note_time'].hour) * 60 + (cur_time.minute - d['last_note_time'].minute)
-#				time_diff = 60 - cur_time.minute + d['delivery_time'].minute
-#				if time_diff < int (d['notify_before']) and time_diff > -60:
-				if time_diff < int (d['notify_before']):
-				
-					msg_var = "Notify Before Order (Order after 12 PM): Please follow up Trip Order # {0} as its delivery time is: {1} for customer: {2} and notify before is {3}".format(d['name'], d['delivery_time'], d['customer'], d['notify_before'])
-					frappe.publish_realtime(event='msgprint', message=msg_var, user=frappe.session.user)
-
-					to_note_count = frappe.db.sql("""update `tabTrip Order` 
-						set last_note_time = %s, notified = 'Yes'
-						where name = %s
-						""", (cur_time, d['name']), as_dict=True)
-
-					frappe.db.commit()
-
-
-#				frappe.db.set_value("Trip Order", d['name'], "last_note_time", cur_time)
-#				frappe.db.set_value("Trip Order", d['name'], "notified", 'Yes')
-#				frappe.publish_realtime(event='eval_js', message='cur_frm.set_value("last_note_time", {0}'.cur_time)
 		else:
 			cur_time = datetime.datetime.now()
 			if int(d['last_note_time'].day) == cur_time.day:
 				time_diff = (cur_time.hour - d['last_note_time'].hour) * 60 + (cur_time.minute - d['last_note_time'].minute)
 				if time_diff > int (d['re_notify_every']):
-#					doc = frappe.get_doc("Trip Order", d['name'])
-#					doc.last_note_time = cur_time
-					msg_var = "Reminder (Before 12 PM): Please follow up Trip Order # {0} as its delivery time is: {1} for customer: {2} and the time difference is {3} and notify before is {4}".format(d['name'], d['delivery_time'], d['customer'], time_diff, d['notify_before'])
+					msg_var = "Please follow up Trip Order # {0} as its delivery time is: {1} for customer: {2} and the time difference is {3} and notify before is {4}".format(d['name'], d['delivery_time'], d['customer'], time_diff, d['notify_before'])
 					frappe.publish_realtime(event='msgprint', message=msg_var, user=frappe.session.user)
 
-					to_note_count = frappe.db.sql("""update `tabTrip Order` 
-						set last_note_time = %s, notified = 'Yes'
-						where name = %s
-						""", (cur_time, d['name']), as_dict=True)
-
-					frappe.db.commit()
-#					frappe.publish_realtime(event='eval_js', message='cur_frm.set_value("last_note_time", {0})'.format(cur_time), user=frappe.session.user)
-#					frappe.publish_realtime(event='eval_js', message='refresh_field("last_note_time")', user=frappe.session.user)
-#					frappe.db.set_value("Trip Order", d['name'], "last_note_time", cur_time)
-#					frappe.publish_realtime(event='eval_js', message='refresh_field("last_note_time")')
 			elif int(d['last_note_time'].day) == (cur_time.day - 1):
 				time_diff = (cur_time.hour + 24 - d['last_note_time'].hour) * 60 + (cur_time.minute - d['last_note_time'].minute)
 				if time_diff > int (d['re_notify_every']):
-
-					msg_var = "Reminder (After 12 PM): Please follow up Trip Order # {0} as its delivery time is: {1} for customer: {2} and the time difference is {3} and notify before is {4}".format(d['name'], d['delivery_time'], d['customer'], time_diff, d['notify_before'])
-
+					msg_var = "Please follow up Trip Order # {0} as its delivery time is: {1} for customer: {2} and the time difference is {3} and notify before is {4}".format(d['name'], d['delivery_time'], d['customer'], time_diff, d['notify_before'])
 					frappe.publish_realtime(event='msgprint', message=msg_var, user=frappe.session.user)
-
-					to_note_count = frappe.db.sql("""update `tabTrip Order` 
-						set last_note_time = %s, notified = 'Yes'
-						where name = %s
-						""", (cur_time, d['name']), as_dict=True)
-
-					frappe.db.commit()
-#					frappe.publish_realtime(event='eval_js', message='frm.set_value("last_note_time", {0})'.format(cur_time), user=frappe.session.user)
-#					frappe.publish_realtime(event='eval_js', message='refresh_field("last_note_time")', user=frappe.session.user)
-#					frappe.db.set_value("Trip Order", d['name'], "last_note_time", cur_time)
-#					frappe.publish_realtime(event='eval_js', message='refresh_field("last_note_time")')
 #		if d.notified == "Yes":
 #			if d.re_notify == 1:
 #				cur_time = datetime.datetime.now()
