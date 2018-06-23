@@ -13,6 +13,11 @@ def get_data():
                                 },
                                 {
                                         "type": "doctype",
+                                        "name": "Taxi Subscription",
+                                        "description": _("Taxi Subscription"),
+                                },
+                                {
+                                        "type": "doctype",
                                         "name": "Route Pricing Settings",
                                         "description": _("Route Pricing Settings"),
                                 }
