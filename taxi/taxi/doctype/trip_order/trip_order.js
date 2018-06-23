@@ -136,7 +136,7 @@ frappe.ui.form.on('Trip Order', {
 		});
 //		confirm("Test Message");
 //		prompt("Test Message");
-		alert("Test Message");
+//		alert("Test Message");
 //		frappe.show_alert({message: __("Added {0} ({1})", [item_code, d.qty]), indicator: 'green'});
 //		var myWindow = window.open("", "", "width=200, height=100");
 //		myWindow.document.write("<p>A new window!</p>");
