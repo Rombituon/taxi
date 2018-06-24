@@ -29,9 +29,9 @@ class TaxiSubscription(AccountsController):
 		self.last_note_time = frappe.db.get_value('TaxiSubscription', {'name': self.name}, 'last_note_time')
 		self.notified = frappe.db.get_value('TaxiSubscription', {'name': self.name}, 'notified')
 		if not (self.customer):
-			self.title = self.origination_place + "-" + self.final_destination
+			self.title = format(self.no_rides_per_day) + " ride/day"
 		else:
-			self.title = self.customer + "-" + self.origination_place + "-" + self.final_destination
+			self.title = self.customer + " -" + " " + format(self.no_rides_per_day) + " ride/day"
 		if (self.credit_amount > 0 and self.money_collection > 0):
 			frappe.throw(_("Can not set money collection amount > 0 if credit amount > 0, please correct"))
 
