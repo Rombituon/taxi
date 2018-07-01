@@ -16,6 +16,8 @@ frappe.ui.form.on('Trip Order', {
 		frm.add_fetch("company", "default_receivable_account", "receivable_account");
 		frm.add_fetch("company", "default_income_account", "income_account");
 		frm.add_fetch("company", "cost_center", "cost_center");
+		frm.set_value('discounted_percentage_event', 0);
+		frm.set_value('discounted_amount_event', 0);
 //		frappe.realtime.on("display_notification", function(data) {
 //			alert("Test Message" + data);
 //		});
@@ -232,6 +234,22 @@ frappe.ui.form.on('Trip Order Hops', {
 	to_metric: function(frm, cdt, cdn) {
 
 		hops_calculation(frm, cdt, cdn);
+	},
+
+	trip_price: function(frm, cdt, cdn) {
+
+		var item_selected = locals[cdt][cdn];
+
+		frm.set_value('discounted_amount', 0.00);
+		frm.set_value('discounted_percentage', 0.00);
+		frm.set_value('total_price', 0);
+		$.each(frm.doc.hops, function(i, row) {
+			frm.set_value('total_price', frm.doc.total_price + row.trip_price);
+		})
+		frm.set_value('grand_total', frm.doc.total_price);
+		frm.set_value('credit_amount', frm.doc.grand_total);
+		frm.set_value('outstanding_amount', frm.doc.credit_amount);
+
 	},
 
 	waiting: function(frm, cdt, cdn) {
