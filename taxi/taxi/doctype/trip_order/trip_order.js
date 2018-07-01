@@ -241,9 +241,17 @@ frappe.ui.form.on('Trip Order Hops', {
 		var waiting_time = moment(item_selected.waiting, "HH:mm:ss A");
 		var waiting_time_hr = waiting_time.hour();
 		var waiting_time_minute = waiting_time.minute();
+		var trip_price_prev = item_selected.trip_price
 		item_selected.waiting_price = flt((((waiting_time_hr * 60) + waiting_time_minute) / 15 ) * 2500);
 		item_selected.trip_price = flt(item_selected.hop_price) + flt(item_selected.waiting_price);
+
+		frm.set_value('total_price', frm.doc.total_price + item_selected.trip_price - trip_price_prev);
+		frm.set_value('grand_total', frm.doc.total_price);
+		frm.set_value('credit_amount', frm.doc.grand_total);
+		frm.set_value('outstanding_amount', frm.doc.credit_amount);
+
 		refresh_field("hops");
+//		refresh_field('customer_balance');
 //		frappe.msgprint(__("Welcome For selecting waiting time"));
 //		var item_selected = locals[cdt][cdn];
 		
