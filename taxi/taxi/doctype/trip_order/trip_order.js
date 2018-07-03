@@ -152,6 +152,13 @@ frappe.ui.form.on('Trip Order', {
 //		frappe.show_alert({message: __("Tesing"), indicator: 'green'});
 	},
 
+
+	engine_to_be_used: function(frm) {
+
+		refresh_field("hops");
+		refresh_field("buss_hops");
+
+	},
 	assigned_driver: function(frm) {
 		if (cur_frm.doc.assigned_driver) {
 			frappe.call({
@@ -167,16 +174,18 @@ frappe.ui.form.on('Trip Order', {
 			})
 			cur_frm.set_value("order_status", "Assigned");
 			//frappe.msgprint(__("Changes happened at {0}", [frm.doc.hops[(item_selected.idx) - 2].to]));
-			var timetest = moment(frm.doc.test_time, "HH:mm:ss A");
-			frappe.msgprint(__("Amount value for time {0}", [timetest.hour()]));
-			frappe.msgprint(__("Amount value for time {0}", [timetest.minute()]));
+//			var timetest = moment(frm.doc.test_time, "HH:mm:ss A");
+//			frappe.msgprint(__("Amount value for time {0}", [timetest.hour()]));
+//			frappe.msgprint(__("Amount value for time {0}", [timetest.minute()]));
 		}
 	},
 
 	discounted_percentage: function(frm) {
 
-		if (frm.doc.discounted_amount_event == 1)
+		if (frm.doc.discounted_amount_event == 1) {
 			frm.set_value('discounted_amount_event', 0);
+			frm.set_value('discounted_percentage_event', 0);
+		}
 		else {
 			frm.set_value('discounted_percentage_event', 1);
 			frm.set_value('discounted_amount', frm.doc.total_price * frm.doc.discounted_percentage/100);
@@ -190,8 +199,10 @@ frappe.ui.form.on('Trip Order', {
 
 	discounted_amount: function(frm) {
 	
-		if (frm.doc.discounted_percentage_event == 1)
+		if (frm.doc.discounted_percentage_event == 1) {
 			frm.set_value('discounted_percentage_event', 0);
+			frm.set_value('discounted_amount_event', 0);
+		}
 		else {
 			frm.set_value('discounted_amount_event', 1);
 			frm.set_value('grand_total', frm.doc.total_price - frm.doc.discounted_amount);
@@ -236,6 +247,20 @@ frappe.ui.form.on('Trip Order Hops', {
 		hops_calculation(frm, cdt, cdn);
 	},
 
+	other_price: function(frm, cdt, cdn) {
+
+		var item_selected = locals[cdt][cdn];
+		var trip_price_prev = item_selected.trip_price
+		frm.set_value('discounted_amount', 0.00);
+		frm.set_value('discounted_percentage', 0.00);
+		item_selected.trip_price = flt(item_selected.hop_price) + flt(item_selected.waiting_price) + flt(item_selected.other_price); 
+		frm.set_value('total_price', frm.doc.total_price + item_selected.trip_price - trip_price_prev);
+		frm.set_value('grand_total', frm.doc.total_price);
+		frm.set_value('credit_amount', frm.doc.grand_total);
+		frm.set_value('outstanding_amount', frm.doc.credit_amount);
+		refresh_field("hops");
+	},
+
 	trip_price: function(frm, cdt, cdn) {
 
 		var item_selected = locals[cdt][cdn];
@@ -261,7 +286,7 @@ frappe.ui.form.on('Trip Order Hops', {
 		var waiting_time_minute = waiting_time.minute();
 		var trip_price_prev = item_selected.trip_price
 		item_selected.waiting_price = flt((((waiting_time_hr * 60) + waiting_time_minute) / 15 ) * 2500);
-		item_selected.trip_price = flt(item_selected.hop_price) + flt(item_selected.waiting_price);
+		item_selected.trip_price = flt(item_selected.hop_price) + flt(item_selected.waiting_price) + flt(item_selected.other_price);
 
 		frm.set_value('total_price', frm.doc.total_price + item_selected.trip_price - trip_price_prev);
 		frm.set_value('grand_total', frm.doc.total_price);
@@ -317,7 +342,9 @@ var hops_calculation = function(frm, cdt, cdn) {
 	var rows_quantity = 0;
 	frm.set_value('total_price', 0);
 	frm.set_value('discounted_amount', 0.00);
-	frm.set_value('discounted_percentage', 0.00);
+//	frm.set_value('discounted_percentage', 0.00);
+        frm.set_value('discounted_percentage_event', 0);
+        frm.set_value('discounted_amount_event', 0);
 	frm.set_value('cash_amount', 0.00);
 	frappe.call({
 		method: "taxi.taxi.doctype.trip_order.trip_order.get_settings",
@@ -363,7 +390,7 @@ var hops_calculation = function(frm, cdt, cdn) {
 							var waiting_time_minute = waiting_time.minute();
 							row.waiting_price = flt((((waiting_time_hr / 60) + waiting_time_minute) / 15 ) * 2500);
 							row.hop_price = flt(row.selected_metric);
-							row.trip_price = flt(row.hop_price) + flt(row.waiting_price);
+							row.trip_price = flt(row.hop_price) + flt(row.waiting_price) + flt(row.other_price);
 						}
 						frm.set_value('total_price', frm.doc.total_price + row.trip_price);
 						refresh_field("hops");
