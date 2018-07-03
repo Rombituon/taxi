@@ -32,6 +32,8 @@ class TaxiSubscription(AccountsController):
 			self.title = format(self.no_rides_per_day) + " ride/day"
 		else:
 			self.title = self.customer + " -" + " " + format(self.no_rides_per_day) + " ride/day"
+		if (self.credit_amount > 0 and self.money_collection > 0):
+			frappe.throw(_("Can not set money collection amount > 0 if credit amount > 0, please correct"))
 
 		self.outstanding_amount = self.credit_amount
 

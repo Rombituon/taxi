@@ -5,7 +5,6 @@ cur_frm.add_fetch('assigned_driver', 'employee_name', 'driver_name')
 cur_frm.add_fetch('assigned_driver', 'money_collection_account', 'driver_cash_account')
 cur_frm.add_fetch('origination_place','metric','origin_metric')
 cur_frm.add_fetch('to', 'metric', 'to_metric')
-cur_frm.add_fetch('from', 'metric', 'from_metric')
 cur_frm.add_fetch('customer', 'classification', 'customer_classification_and_description')
 //frappe.realtime.on("display_notification", function(data) {
 //	alert("Test Outside of Setup and Onlonad: " + data);
@@ -17,12 +16,6 @@ frappe.ui.form.on('Taxi Subscription', {
 		frm.add_fetch("company", "default_receivable_account", "receivable_account");
 		frm.add_fetch("company", "default_income_account", "income_account");
 		frm.add_fetch("company", "cost_center", "cost_center");
-		frm.set_value('discounted_percentage_event', 0);
-		frm.set_value('discounted_amount_event', 0);
-//                frm.set_value('discounted_percentage_event', 0);
-//                frm.set_value('discounted_amount_event', 0);
-
-
 //		frappe.realtime.on("display_notification", function(data) {
 //			alert("Test Message" + data);
 //		});
@@ -63,11 +56,6 @@ frappe.ui.form.on('Taxi Subscription', {
 //				filters: {'itemgroup': 'Taxi Hop'}
 //			}
 //		});
-
-
-		frm.set_value('discounted_percentage_event', 0);
-		frm.set_value('discounted_amount_event', 0);
-
 
 		frm.set_query("to", "hops", function(doc, cdt, cdn) {
 			return {
@@ -185,11 +173,8 @@ frappe.ui.form.on('Taxi Subscription', {
 
 	discounted_percentage: function(frm) {
 
-		if (frm.doc.discounted_amount_event === 1) {
+		if (frm.doc.discounted_amount_event == 1)
 			frm.set_value('discounted_amount_event', 0);
-			frm.set_value('discounted_percentage_event', 0);
-		}
-
 		else {
 			frm.set_value('discounted_percentage_event', 1);
 			frm.set_value('discounted_amount', frm.doc.total_price * frm.doc.discounted_percentage/100);
@@ -203,11 +188,8 @@ frappe.ui.form.on('Taxi Subscription', {
 
 	discounted_amount: function(frm) {
 	
-		if (frm.doc.discounted_percentage_event === 1) {
-			frm.set_value('discounted_amount_event', 0);
+		if (frm.doc.discounted_percentage_event == 1)
 			frm.set_value('discounted_percentage_event', 0);
-		}
-
 		else {
 			frm.set_value('discounted_amount_event', 1);
 			frm.set_value('grand_total', frm.doc.total_price - frm.doc.discounted_amount);
@@ -240,7 +222,7 @@ frappe.ui.form.on('Taxi Subscription', {
 	}
 });
 
-frappe.ui.form.on('Taxi Subscription Hops', {
+frappe.ui.form.on('Trip Order Hops', {
 
 	hops_remove: function(frm, cdt, cdn) {
 
@@ -248,12 +230,6 @@ frappe.ui.form.on('Taxi Subscription Hops', {
 	},
 
 	to_metric: function(frm, cdt, cdn) {
-
-		hops_calculation(frm, cdt, cdn);
-	},
-
-
-	from_metric: function(frm, cdt, cdn) {
 
 		hops_calculation(frm, cdt, cdn);
 	},
@@ -315,80 +291,65 @@ var hops_calculation = function(frm, cdt, cdn) {
 	var rows_quantity = 0;
 	frm.set_value('total_price', 0);
 	frm.set_value('discounted_amount', 0.00);
-//	frm.set_value('discounted_percentage', 0.000);
-	frm.set_value('discounted_percentage_event', 0);
-	frm.set_value('discounted_amount_event', 0);
-	refresh_field("discounted_percentage_event");
-	refresh_field("discounted_amount_event");
+	frm.set_value('discounted_percentage', 0.00);
 	frm.set_value('cash_amount', 0.00);
 	frappe.call({
 		method: "taxi.taxi.doctype.trip_order.trip_order.get_settings",
 		callback: function(r) {
-			var j = 0;
 			if (r.message) {
 				$.each(frm.doc.hops, function(i, row) {
-					if (Boolean (row.from)) {
-						j = 0;		
-						if (flt(row.to_metric) > flt(row.from_metric)) {
-							row.selected_metric = row.to_metric;
-						}
-						else {
-							row.selected_metric = row.from_metric;
-						}
-					}			
-					else {
-						j = j + 1;
-						if ((j >= (r.message[0] - 1)) && (j < (r.message[1] - 1))) {
-							if (flt(row.to_metric) > flt(frm.doc.hops[i-1].to_metric)) {
+		  	        	if (row.to_metric) {
+						if (i < (r.message[0] - 1)) {
+							if (flt(row.to_metric) > flt(frm.doc.origin_metric)) {
 								row.selected_metric = row.to_metric;
 							}
-							else if (flt(row.to_metric) < flt(frm.doc.hops[i-1].to_metric)) {
-								row.selected_metric = frm.doc.hops[i-1].to_metric;
-							}
 							else {
+								row.selected_metric = frm.doc.origin_metric;
+							}
+						}
+						else if (i >= (r.message[1]-1)) {
+							if (flt(row.to_metric) >= flt(frm.doc.hops[i-1].to_metric))
+								row.selected_metric = row.to_metric;
+							else
+								row.selected_metric = frm.doc.hops[i-1].to_metric;
+						}
+						else {
+							if (flt(row.to_metric) > flt(frm.doc.hops[i-1].to_metric))
+								row.selected_metric = row.to_metric;
+							else if (flt(row.to_metric) < flt(frm.doc.hops[i-1].to_metric))
+								row.selected_metric = frm.doc.hops[i-1].to_metric;
+							else
 								row.selected_metric = r.message[2];
-							}
+						}
+						if (row.ozw == 1) {
+							var waiting_time = moment(row.waiting, "HH:mm:ss A");
+							var waiting_time_hr = waiting_time.hour();
+							var waiting_time_minute = waiting_time.minute();
+							row.waiting_price = flt((((waiting_time_hr / 60) + waiting_time_minute) / 15 ) * 2500);
+							row.hop_price = 0;
+							row.trip_price = row.waiting_price;
+//							row.hop_price = 0;
+							
 						}
 						else {
-							if (flt(row.to_metric) >= flt(frm.doc.hops[i-1].to_metric)) {
-								row.selected_metric = row.to_metric;
-							}
-							else {
-								row.selected_metric = frm.doc.hops[i-1].to_metric;
-							}
-
+							var waiting_time = moment(row.waiting, "HH:mm:ss A");
+							var waiting_time_hr = waiting_time.hour();
+							var waiting_time_minute = waiting_time.minute();
+							row.waiting_price = flt((((waiting_time_hr / 60) + waiting_time_minute) / 15 ) * 2500);
+							row.hop_price = flt(row.selected_metric);
+							row.trip_price = flt(row.hop_price) + flt(row.waiting_price);
 						}
-					}
-
-					if (row.ozw == 1) {
-						var waiting_time = moment(row.waiting, "HH:mm:ss A");
-						var waiting_time_hr = waiting_time.hour();
-						var waiting_time_minute = waiting_time.minute();
-						row.waiting_price = flt((((waiting_time_hr / 60) + waiting_time_minute) / 15 ) * 2500);
-						row.hop_price = 0;
-						row.trip_price = row.waiting_price * 0.75;
-//                                                      row.hop_price = 0;
-
-					}
-					else {
-						var waiting_time = moment(row.waiting, "HH:mm:ss A");
-						var waiting_time_hr = waiting_time.hour();
-						var waiting_time_minute = waiting_time.minute();
-						row.waiting_price = flt((((waiting_time_hr / 60) + waiting_time_minute) / 15 ) * 2500);
-						row.hop_price = flt(row.selected_metric);
-						row.trip_price = (flt(row.hop_price) + flt(row.waiting_price)) * 0.75;
-					}					
 						frm.set_value('total_price', frm.doc.total_price + row.trip_price);
 						refresh_field("hops");
 						rows_quantity = rows_quantity + 1;
+					}
 				})
-//				if ((rows_quantity-1) >= 0) {
-//					frm.set_value('final_destination', frm.doc.hops[rows_quantity-1].to);
-//				}
-//				else
-//					frm.set_value('final_destination', "Not Selected");
+				if ((rows_quantity-1) >= 0) {
+					frm.set_value('final_destination', frm.doc.hops[rows_quantity-1].to);
+				}
+				else
+					frm.set_value('final_destination', "Not Selected");
 				
-				frm.set_value('no_rides_per_day', rows_quantity);
 				frm.set_value('grand_total', frm.doc.total_price);
 				frm.set_value('credit_amount', frm.doc.grand_total);
 				frm.set_value('outstanding_amount', frm.doc.credit_amount);

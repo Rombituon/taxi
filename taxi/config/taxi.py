@@ -18,6 +18,11 @@ def get_data():
                                 },
                                 {
                                         "type": "doctype",
+                                        "name": "Type Of Service",
+                                        "description": _("Type Of Service"),
+                                },
+                                {
+                                        "type": "doctype",
                                         "name": "Route Pricing Settings",
                                         "description": _("Route Pricing Settings"),
                                 }
