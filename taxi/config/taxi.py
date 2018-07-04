@@ -18,8 +18,8 @@ def get_data():
                                 },
                                 {
                                         "type": "doctype",
-                                        "name": "Type Of Service",
-                                        "description": _("Type Of Service"),
+                                        "name": "Type of Service",
+                                        "description": _("Type of Service"),
                                 },
                                 {
                                         "type": "doctype",
@@ -31,6 +31,12 @@ def get_data():
 		{
                         "label": _("Taxi Fleet Management"),
                         "items": [
+                                {
+                                        "type": "doctype",
+                                        "name": "Type of Vehicle",
+#                                        "description": _("Taxi Vehicle"),
+                                        "label": _("Type of Vehicle"),
+                                },
                                 {
                                         "type": "doctype",
                                         "name": "Vehicle",
@@ -67,12 +73,7 @@ def get_data():
                                         "type": "doctype",
                                         "name": "Assign Commission Rule",
                                         "description": _("Assign Commission Rule"),
-                                },
-                                {
-                                        "type": "doctype",
-                                        "name": "Test Driver",
-                                        "description": _("Test Driver"),
-				}
+                                }
                         ]
                 }
 	]

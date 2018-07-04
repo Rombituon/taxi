@@ -6,6 +6,9 @@ cur_frm.add_fetch('assigned_driver', 'money_collection_account', 'driver_cash_ac
 cur_frm.add_fetch('origination_place','metric','origin_metric')
 cur_frm.add_fetch('to', 'metric', 'to_metric')
 cur_frm.add_fetch('customer', 'classification', 'customer_classification_and_description')
+cur_frm.add_fetch('type_of_service', 'additional_price_on_the_rates', 'service_additional_price')
+cur_frm.add_fetch('type_of_vehicle', 'rate_factor_for_the_vehicle', 'rate_factor_for_the_vehicle')
+
 //frappe.realtime.on("display_notification", function(data) {
 //	alert("Test Outside of Setup and Onlonad: " + data);
 //	});
@@ -58,6 +61,17 @@ frappe.ui.form.on('Trip Order', {
 //				filters: {'itemgroup': 'Taxi Hop'}
 //			}
 //		});
+
+
+		frm.set_query("type_of_vehicle", function(doc) {
+			return {
+				filters: {
+					'type_of_service': frm.doc.type_of_service
+				}
+			};
+		});
+
+
 
 		frm.set_query("to", "hops", function(doc, cdt, cdn) {
 			return {

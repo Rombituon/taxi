@@ -6,5 +6,5 @@ from __future__ import unicode_literals
 import frappe
 import unittest
 
-class TestTestDriver(unittest.TestCase):
+class TestTypeofVehicle(unittest.TestCase):
 	pass
