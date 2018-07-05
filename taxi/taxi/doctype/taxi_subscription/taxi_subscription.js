@@ -2,7 +2,6 @@
 // For license information, please see license.txt
 
 cur_frm.add_fetch('assigned_driver', 'employee_name', 'driver_name')
-cur_frm.add_fetch('assigned_driver', 'money_collection_account', 'driver_cash_account')
 cur_frm.add_fetch('origination_place','metric','origin_metric')
 cur_frm.add_fetch('to', 'metric', 'to_metric')
 cur_frm.add_fetch('from', 'metric', 'from_metric')
@@ -133,6 +132,13 @@ frappe.ui.form.on('Taxi Subscription', {
 
 	},
 
+
+	start_date: function(frm) {
+
+		frm.set_value('end_date', frappe.datetime.add_days(cur_frm.doc.start_date, 30));
+
+	},
+
 	customer: function(frm) {
 		//msgprint ("Welcome");
 		frappe.call({
@@ -160,27 +166,6 @@ frappe.ui.form.on('Taxi Subscription', {
 //				show_alert('Thank you for continue')
 //			});
 //		frappe.show_alert({message: __("Tesing"), indicator: 'green'});
-	},
-
-	assigned_driver: function(frm) {
-		if (cur_frm.doc.assigned_driver) {
-			frappe.call({
-				method: "taxi.taxi.doctype.trip_order.trip_order.get_vehicle",
-				args: {
-					AssignedDriver: frm.doc.assigned_driver
-				},
-				callback: function(r) {
-					if (r.message) {
-						cur_frm.set_value("vehicle", r.message);
-					}
-				}
-			})
-			cur_frm.set_value("order_status", "Assigned");
-			//frappe.msgprint(__("Changes happened at {0}", [frm.doc.hops[(item_selected.idx) - 2].to]));
-			var timetest = moment(frm.doc.test_time, "HH:mm:ss A");
-			frappe.msgprint(__("Amount value for time {0}", [timetest.hour()]));
-			frappe.msgprint(__("Amount value for time {0}", [timetest.minute()]));
-		}
 	},
 
 	discounted_percentage: function(frm) {
@@ -388,6 +373,7 @@ var hops_calculation = function(frm, cdt, cdn) {
 //				else
 //					frm.set_value('final_destination', "Not Selected");
 				
+				frm.set_value('total_price', frm.doc.total_price * 22);
 				frm.set_value('no_rides_per_day', rows_quantity);
 				frm.set_value('grand_total', frm.doc.total_price);
 				frm.set_value('credit_amount', frm.doc.grand_total);

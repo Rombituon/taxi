@@ -47,14 +47,9 @@ class TaxiSubscription(AccountsController):
 
         def on_submit(self):
 		
-#		if self.cash_amount > 0:
-#			if self.order_status != "Done":
-#				frappe.throw(_("Order Status must be Done to be able to submit the order"))		
-		if (self.order_status != "Done" and self.order_status != "Cancelled" and self.order_status != "In Progress"):
-				frappe.throw(_("As cash amount is zero, Order Status must be Cancelled or Done to be able to submit the order"))
-		elif not frappe.db.get_value('Employee', {'name': self.assigned_driver}, 'money_collection_account'):
-				frappe.throw(_("Money Collection Account need to be set for Employee"))
-
+		if (self.cash_amount > 0):
+			if (self.cash_account is None):
+				frappe.throw(_("Cash Account is required to be set"))
 
 		self.outstanding_amount = self.credit_amount
                 self.posting_date = self.transaction_date
@@ -92,7 +87,7 @@ class TaxiSubscription(AccountsController):
 				"account": self.receivable_account,
 				"party_type": "Customer",
 				"party": self.customer,
-				"against": self.driver_cash_account,
+				"against": self.cash_account,
 				"credit": self.cash_amount,
 				"credit_in_account_currency": self.cash_amount,
 				"against_voucher": self.name,
@@ -100,7 +95,7 @@ class TaxiSubscription(AccountsController):
 			})
 
 			paid_to_gl_entry = self.get_gl_dict({
-				"account": self.driver_cash_account,
+				"account": self.cash_account,
 				"against": self.customer,
 				"debit": self.cash_amount,
 				"debit_in_account_currency": self.cash_amount,
@@ -111,29 +106,6 @@ class TaxiSubscription(AccountsController):
 			make_gl_entries([customer_gl_entries, paid_to_gl_entry], cancel=(self.docstatus == 2),
 				update_outstanding="Yes", merge_entries=False)
 
-		if self.money_collection > 0:
-
-			customer_gl_entries =  self.get_gl_dict({
-				"account": self.receivable_account,
-				"party_type": "Customer",
-				"party": self.customer,
-				"against": self.driver_cash_account,
-				"credit": self.money_collection,
-				"credit_in_account_currency": self.money_collection,
-				"against_voucher": self.name,
-				"against_voucher_type": self.doctype
-                	})
-
-			paid_to_gl_entry = self.get_gl_dict({
-                        	"account": self.driver_cash_account,
-                        	"against": self.customer,
-                        	"debit": self.money_collection,
-                        	"debit_in_account_currency": self.money_collection,
-                        	"cost_center": self.cost_center
-                	})
-
-			make_gl_entries([customer_gl_entries, paid_to_gl_entry], cancel=(self.docstatus == 2),
-				update_outstanding="Yes", merge_entries=False)
 
 @frappe.whitelist()
 def get_settings():

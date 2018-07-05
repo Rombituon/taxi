@@ -167,72 +167,12 @@ frappe.ui.form.on('Trip Order', {
 	},
 
 
-	type_of_service: function(frm, cdt, cdn) {
-	
-		
-//		frm.set_value('type_of_vehicle', null);
+	engine_to_be_used: function(frm) {
 
-		cur_frm.clear_table("hops");
-		cur_frm.clear_table("bus_hops");
 		refresh_field("hops");
-		refresh_field("bus_hops");
-		frm.set_value('rate_factor_for_the_vehicle', 0);
-		frm.set_value('buying_price', 0);
-		frm.set_value('selling_price', 0);
-		frm.set_value('final_destination', null);
-		frm.set_value('total_price', 0);
-		frm.set_value('discounted_amount', 0.00);
-		frm.set_value('discounted_percentage_event', 0);
-		frm.set_value('discounted_amount_event', 0);
-		frm.set_value('cash_amount', 0.00);
-		frm.set_value('grand_total', frm.doc.total_price);
-		frm.set_value('credit_amount', frm.doc.grand_total);
-		frm.set_value('outstanding_amount', frm.doc.credit_amount);
-		frm.set_value('type_of_vehicle', null);
+		refresh_field("buss_hops");
 
 	},
-
-
-	overwrite_service_additional_price: function(frm, cdt, cdn) {
-
-		hops_calculation(frm, cdt, cdn);
-
-	},
-
-
-	type_of_vehicle: function(frm, cdt, cdn) {
-
-		if ((frm.doc.type_of_service) != 'Bus' && (frm.doc.type_of_vehicle != null))
-
-			hops_calculation(frm, cdt, cdn);
-	},
-
-	buying_price: function(frm) {
-	
-		if ((frm.doc.type_of_vehicle == null) && (flt(frm.doc.buying_price) != 0)) {
-			frm.set_value('buying_price', 0.00);
-			frappe.msgprint(__("Please select type of vehicle"));
-		}
-
-	},
-
-	selling_price: function(frm) {
-		
-		cur_frm.clear_table("hops");
-		frm.set_value('total_price', frm.doc.selling_price);
-		frm.set_value('discounted_amount', 0.00);
-		frm.set_value('discounted_percentage_event', 0);
-		frm.set_value('discounted_amount_event', 0);
-		frm.set_value('cash_amount', 0.00);
-		frm.set_value('grand_total', frm.doc.total_price);
-		frm.set_value('credit_amount', frm.doc.grand_total);
-		frm.set_value('outstanding_amount', frm.doc.credit_amount);
-		if ((frm.doc.type_of_vehicle) == null && (flt(frm.doc.selling_price) != 0)) {
-			frm.set_value('selling_price', 0.00);
-			frappe.msgprint(__("Please select type of vehicle"));
-		}
-	},
-
 	assigned_driver: function(frm) {
 		if (cur_frm.doc.assigned_driver) {
 			frappe.call({
@@ -309,23 +249,6 @@ frappe.ui.form.on('Trip Order', {
 	}
 });
 
-
-frappe.ui.form.on('Trip Order Bus Hops', {
-
-	bus_hops_remove: function(frm, cdt, cdn) {
-
-		bus_hops_action(frm, cdt, cdn);
-
-	},
-
-	to: function(frm, cdt, cdn) {
-
-		bus_hops_action(frm, cdt, cdn);
-	},
-
-});
-
-
 frappe.ui.form.on('Trip Order Hops', {
 
 	hops_remove: function(frm, cdt, cdn) {
@@ -375,7 +298,7 @@ frappe.ui.form.on('Trip Order Hops', {
 		var waiting_time = moment(item_selected.waiting, "HH:mm:ss A");
 		var waiting_time_hr = waiting_time.hour();
 		var waiting_time_minute = waiting_time.minute();
-		var trip_price_prev = item_selected.trip_price;
+		var trip_price_prev = item_selected.trip_price
 		item_selected.waiting_price = flt((((waiting_time_hr * 60) + waiting_time_minute) / 15 ) * 2500);
 		item_selected.trip_price = flt(item_selected.hop_price) + flt(item_selected.waiting_price) + flt(item_selected.other_price);
 
@@ -437,87 +360,68 @@ var hops_calculation = function(frm, cdt, cdn) {
         frm.set_value('discounted_percentage_event', 0);
         frm.set_value('discounted_amount_event', 0);
 	frm.set_value('cash_amount', 0.00);
-
-	if (frm.doc.type_of_vehicle != null) {
-
-		frappe.call({
-			method: "taxi.taxi.doctype.trip_order.trip_order.get_settings",
-			callback: function(r) {
-				var serv_add_price;
-				if (flt(frm.doc.overwrite_service_additional_price) > 0)
-					serv_add_price = flt (frm.doc.overwrite_service_additional_price);
-				else
-					serv_add_price = flt (frm.doc.service_additional_price);
-				if (r.message) {
-					$.each(frm.doc.hops, function(i, row) {
-			  	        	if (row.to_metric) {
-							if (i < (r.message[0] - 1)) {
-								if (flt(row.to_metric) > flt(frm.doc.origin_metric)) {
-									row.selected_metric = row.to_metric;
-								}
-								else {
-									row.selected_metric = frm.doc.origin_metric;
-								}
-							}
-							else if (i >= (r.message[1]-1)) {
-								if (flt(row.to_metric) >= flt(frm.doc.hops[i-1].to_metric))
-									row.selected_metric = row.to_metric;
-								else
-									row.selected_metric = frm.doc.hops[i-1].to_metric;
+	frappe.call({
+		method: "taxi.taxi.doctype.trip_order.trip_order.get_settings",
+		callback: function(r) {
+			if (r.message) {
+				$.each(frm.doc.hops, function(i, row) {
+		  	        	if (row.to_metric) {
+						if (i < (r.message[0] - 1)) {
+							if (flt(row.to_metric) > flt(frm.doc.origin_metric)) {
+								row.selected_metric = row.to_metric;
 							}
 							else {
-								if (flt(row.to_metric) > flt(frm.doc.hops[i-1].to_metric))
-									row.selected_metric = row.to_metric;
-								else if (flt(row.to_metric) < flt(frm.doc.hops[i-1].to_metric))
-									row.selected_metric = frm.doc.hops[i-1].to_metric;
-								else
-									row.selected_metric = r.message[2];
+								row.selected_metric = frm.doc.origin_metric;
 							}
-							if (row.ozw == 1) {
-								var waiting_time = moment(row.waiting, "HH:mm:ss A");
-								var waiting_time_hr = waiting_time.hour();
-								var waiting_time_minute = waiting_time.minute();
-								row.waiting_price = flt((((waiting_time_hr / 60) + waiting_time_minute) / 15 ) * 2500);
-								row.hop_price = 0;
-								row.trip_price = row.waiting_price;
-//								row.hop_price = 0;
-							
-							}
-							else {
-								var waiting_time = moment(row.waiting, "HH:mm:ss A");
-								var waiting_time_hr = waiting_time.hour();
-								var waiting_time_minute = waiting_time.minute();
-								row.waiting_price = flt((((waiting_time_hr / 60) + waiting_time_minute) / 15 ) * 2500);
-								row.hop_price = flt(row.selected_metric);
-								row.trip_price = (flt(row.hop_price) + flt(row.waiting_price) + flt(row.other_price)) * flt(frm.doc.rate_factor_for_the_vehicle) + serv_add_price;
-							}
-							frm.set_value('total_price', frm.doc.total_price + row.trip_price);
-							refresh_field("hops");
-							rows_quantity = rows_quantity + 1;
 						}
-					})
-					if ((rows_quantity-1) >= 0) {
-						frm.set_value('final_destination', frm.doc.hops[rows_quantity-1].to);
+						else if (i >= (r.message[1]-1)) {
+							if (flt(row.to_metric) >= flt(frm.doc.hops[i-1].to_metric))
+								row.selected_metric = row.to_metric;
+							else
+								row.selected_metric = frm.doc.hops[i-1].to_metric;
+						}
+						else {
+							if (flt(row.to_metric) > flt(frm.doc.hops[i-1].to_metric))
+								row.selected_metric = row.to_metric;
+							else if (flt(row.to_metric) < flt(frm.doc.hops[i-1].to_metric))
+								row.selected_metric = frm.doc.hops[i-1].to_metric;
+							else
+								row.selected_metric = r.message[2];
+						}
+						if (row.ozw == 1) {
+							var waiting_time = moment(row.waiting, "HH:mm:ss A");
+							var waiting_time_hr = waiting_time.hour();
+							var waiting_time_minute = waiting_time.minute();
+							row.waiting_price = flt((((waiting_time_hr / 60) + waiting_time_minute) / 15 ) * 2500);
+							row.hop_price = 0;
+							row.trip_price = row.waiting_price;
+//							row.hop_price = 0;
+							
+						}
+						else {
+							var waiting_time = moment(row.waiting, "HH:mm:ss A");
+							var waiting_time_hr = waiting_time.hour();
+							var waiting_time_minute = waiting_time.minute();
+							row.waiting_price = flt((((waiting_time_hr / 60) + waiting_time_minute) / 15 ) * 2500);
+							row.hop_price = flt(row.selected_metric);
+							row.trip_price = flt(row.hop_price) + flt(row.waiting_price) + flt(row.other_price);
+						}
+						frm.set_value('total_price', frm.doc.total_price + row.trip_price);
+						refresh_field("hops");
+						rows_quantity = rows_quantity + 1;
 					}
-					else
-						frm.set_value('final_destination', "Not Selected");
-				
-					frm.set_value('grand_total', frm.doc.total_price);
-					frm.set_value('credit_amount', frm.doc.grand_total);
-					frm.set_value('outstanding_amount', frm.doc.credit_amount);
+				})
+				if ((rows_quantity-1) >= 0) {
+					frm.set_value('final_destination', frm.doc.hops[rows_quantity-1].to);
 				}
+				else
+					frm.set_value('final_destination', "Not Selected");
+				
+				frm.set_value('grand_total', frm.doc.total_price);
+				frm.set_value('credit_amount', frm.doc.grand_total);
+				frm.set_value('outstanding_amount', frm.doc.credit_amount);
 			}
-		})
-		refresh_field("hops");
-	}
-	else
-
-		frappe.msgprint(__("Please select type of vehicle"));
-}
-
-
-var bus_hops_action = function(frm, cdt, cdn) {
-
-
-	frm.set_value('final_destination', frm.doc.bus_hops[((frm.doc.bus_hops.length) -1)].to);
+		}
+	})
+	refresh_field("hops");
 }
