@@ -20,11 +20,6 @@ def get_data():
                                         "type": "doctype",
                                         "name": "Type of Service",
                                         "description": _("Type of Service"),
-                                },
-                                {
-                                        "type": "doctype",
-                                        "name": "Route Pricing Settings",
-                                        "description": _("Route Pricing Settings"),
                                 }
 			]
 		},
@@ -75,5 +70,22 @@ def get_data():
                                         "description": _("Assign Commission Rule"),
                                 }
                         ]
-                }
+                },
+                {
+                        "label": _("Settings"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Route Pricing Settings",
+					"description": _("Route Pricing Settings"),
+				},	
+				{
+					"type": "doctype",
+					"name": "Order Options For Subscription Hop Status",
+					"description": _("Order Options For Subscription Hop Status"),
+				}
+			]
+		}
+
+
 	]

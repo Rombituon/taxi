@@ -3,8 +3,8 @@
 
 cur_frm.add_fetch('assigned_driver', 'employee_name', 'driver_name')
 cur_frm.add_fetch('origination_place','metric','origin_metric')
-cur_frm.add_fetch('to', 'metric', 'to_metric')
-cur_frm.add_fetch('from', 'metric', 'from_metric')
+cur_frm.add_fetch('hop_to', 'metric', 'to_metric')
+cur_frm.add_fetch('hop_from', 'metric', 'from_metric')
 cur_frm.add_fetch('customer', 'classification', 'customer_classification_and_description')
 //frappe.realtime.on("display_notification", function(data) {
 //	alert("Test Outside of Setup and Onlonad: " + data);
@@ -55,7 +55,7 @@ frappe.ui.form.on('Taxi Subscription', {
 //		});
 
 
-//		frm.set_query("to", "hops", function(doc, cdt, cdn) {
+//		frm.set_query("hop_to", "hops", function(doc, cdt, cdn) {
 //			var d = locals[cdt][cdn];
 //			return {
 //				query: "taxi.taxi.doctype.trip_order.trip_order.get_origination",
@@ -68,7 +68,7 @@ frappe.ui.form.on('Taxi Subscription', {
 		frm.set_value('discounted_amount_event', 0);
 
 
-		frm.set_query("to", "hops", function(doc, cdt, cdn) {
+		frm.set_query("hop_to", "hops", function(doc, cdt, cdn) {
 			return {
 				filters: {
 					'item_group': 'Taxi Hop'
@@ -281,7 +281,7 @@ frappe.ui.form.on('Taxi Subscription Hops', {
 		}
 		else
 			item_selected.to_metric = item_selected.ozw_metric;
-		//frappe.msgprint(__("Changes happened at {0}", [frm.doc.hops[(item_selected.idx) - 2].to]));
+		//frappe.msgprint(__("Changes happened at {0}", [frm.doc.hops[(item_selected.idx) - 2].hop_to]));
 		$.each(frm.doc.hops, function(i, row) {
 			if (row.ozw == 1) {
 				if (flt (i) == 0)
@@ -312,7 +312,7 @@ var hops_calculation = function(frm, cdt, cdn) {
 			var j = 0;
 			if (r.message) {
 				$.each(frm.doc.hops, function(i, row) {
-					if (Boolean (row.from)) {
+					if (Boolean (row.hop_from)) {
 						j = 0;		
 						if (flt(row.to_metric) > flt(row.from_metric)) {
 							row.selected_metric = row.to_metric;
@@ -368,7 +368,7 @@ var hops_calculation = function(frm, cdt, cdn) {
 						rows_quantity = rows_quantity + 1;
 				})
 //				if ((rows_quantity-1) >= 0) {
-//					frm.set_value('final_destination', frm.doc.hops[rows_quantity-1].to);
+//					frm.set_value('final_destination', frm.doc.hops[rows_quantity-1].hop_to);
 //				}
 //				else
 //					frm.set_value('final_destination', "Not Selected");

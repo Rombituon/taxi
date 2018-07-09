@@ -4,7 +4,7 @@
 cur_frm.add_fetch('assigned_driver', 'employee_name', 'driver_name')
 cur_frm.add_fetch('assigned_driver', 'money_collection_account', 'driver_cash_account')
 cur_frm.add_fetch('origination_place','metric','origin_metric')
-cur_frm.add_fetch('to', 'metric', 'to_metric')
+cur_frm.add_fetch('hop_to', 'metric', 'to_metric')
 cur_frm.add_fetch('customer', 'classification', 'customer_classification_and_description')
 cur_frm.add_fetch('type_of_service', 'additional_price_on_the_rates', 'service_additional_price')
 cur_frm.add_fetch('type_of_vehicle', 'rate_factor_for_the_vehicle', 'rate_factor_for_the_vehicle')
@@ -42,11 +42,33 @@ frappe.ui.form.on('Trip Order', {
 			frm.add_custom_button(__("Show Payments"), function() {
 				frappe.set_route("List", "Payment Entry", {"Payment Entry Reference.reference_name": frm.doc.name});
 			}, __("View"));
-		}
+		};
 	},
 
 
         onload: function(frm) {
+
+//		if (cur_frm.doc.customer) {
+//			if (frm.doc.docstatus === 0){
+//				frappe.call({
+//					method: "taxi.taxi.doctype.trip_order.trip_order.get_customer_subsc",
+//					args: {date: frm.doc.posting_date, party_type: 'Customer', party: frm.doc.customer, docname: frm.doc.name},
+//					callback: function(r) {
+//						if (r.message[1] == 'Yes') {
+//							cur_frm.set_value("not_subsc_order", 0);
+//							refresh_field('not_subsc_order');
+//						}
+//						cur_frm.set_value("subscriber_or_not", r.message[1]);
+//						cur_frm.set_value("subscription_ref", r.message[0]);
+//						var trip_order_subsc_hops = r.message[2];
+//						trip_order_subsc_hops_filling(frm, trip_order_subsc_hops);
+//					}
+//				});
+//				frm.save();
+//			}
+//		};
+
+
 //		var test = "Welcome"
 //		frappe.realtime.on("display_notification", function(data) {
 //			alert("Test Message" + data);
@@ -54,7 +76,7 @@ frappe.ui.form.on('Trip Order', {
 //		});
 
 
-//		frm.set_query("to", "hops", function(doc, cdt, cdn) {
+//		frm.set_query("hop_to", "hops", function(doc, cdt, cdn) {
 //			var d = locals[cdt][cdn];
 //			return {
 //				query: "taxi.taxi.doctype.trip_order.trip_order.get_origination",
@@ -73,7 +95,7 @@ frappe.ui.form.on('Trip Order', {
 
 
 
-		frm.set_query("to", "hops", function(doc, cdt, cdn) {
+		frm.set_query("hop_to", "hops", function(doc, cdt, cdn) {
 			return {
 				filters: {
 					'item_group': 'Taxi Hop'
@@ -137,19 +159,92 @@ frappe.ui.form.on('Trip Order', {
 
 	},
 
+	update: function(frm, cdt, cdn) {
+		if (cur_frm.doc.customer) {
+			if (frm.doc.docstatus === 0){
+				frappe.call({
+					method: "taxi.taxi.doctype.trip_order.trip_order.get_customer_subsc",
+					args: {date: frm.doc.posting_date, party_type: 'Customer', party: frm.doc.customer, docname: frm.doc.name},
+					callback: function(r) {
+						if (r.message[1] == 'Yes') {
+							cur_frm.set_value("not_subsc_order", 0);
+							refresh_field('not_subsc_order');
+						}
+						cur_frm.set_value("subscriber_or_not", r.message[1]);
+						cur_frm.set_value("subscription_ref", r.message[0]);
+						var trip_order_subsc_hops = r.message[2];
+						trip_order_subsc_hops_filling(frm, trip_order_subsc_hops);
+					}
+				});
+			}
+		}
+	},
+
 	customer: function(frm) {
 		//msgprint ("Welcome");
-		frappe.call({
-			method: "erpnext.accounts.utils.get_balance_on",
-			args: {date: frm.doc.transaction_date, party_type: 'Customer', party: frm.doc.customer},
-			callback: function(r) {
-				//msgprint(r.message);
-				cur_frm.set_value("customer_balance", r.message);
-				//frm.doc.customer_balance = 1000
-				//frm.doc.customer_balance = format_currency(r.message, erpnext.get_currency(frm.doc.company));
-				refresh_field('customer_balance');
+                if (cur_frm.doc.customer) {
+			frappe.call({
+				method: "erpnext.accounts.utils.get_balance_on",
+				args: {date: frm.doc.transaction_date, party_type: 'Customer', party: frm.doc.customer},
+				callback: function(r) {
+					//msgprint(r.message);
+					cur_frm.set_value("customer_balance", r.message);
+					//frm.doc.customer_balance = 1000
+					//frm.doc.customer_balance = format_currency(r.message, erpnext.get_currency(frm.doc.company));
+					refresh_field('customer_balance');
+				}
+			});
+
+			if (frm.doc.__islocal === 1) {
+//			if (frm.doc.docstatus === 0) {
+	                	frappe.call({
+					method: "taxi.taxi.doctype.trip_order.trip_order.get_customer_subsc",
+        		                args: {date: frm.doc.posting_date, party_type: 'Customer', party: frm.doc.customer},
+                		        callback: function(r) {
+
+//						frappe.msgprint(__("The customer has this subscription ref: {0} and he is {1} Subscribed and these are its details {2} and {3}", [r.message[0], r.message[1], r.message[2][0]['status'], r.message[2][1]['status']]));
+						if (r.message[1] == 'Yes') {						
+							cur_frm.set_value("not_subsc_order", 0);
+							refresh_field('not_subsc_order');
+						}
+						cur_frm.set_value("subscriber_or_not", r.message[1]);
+						cur_frm.set_value("subscription_ref", r.message[0]);
+//						msgprint(r.message);
+//						cur_frm.set_value("customer_balance", r.message);
+//						frm.doc.customer_balance = 1000
+//						frm.doc.customer_balance = format_currency(r.message, erpnext.get_currency(frm.doc.company));
+//	                                	refresh_field('customer_balance');
+						var trip_order_subsc_hops = r.message[2];
+						trip_order_subsc_hops_filling(frm, trip_order_subsc_hops);
+					}
+                		});
 			}
-		});
+			else if (frm.doc.docstatus === 0){
+
+				frappe.call({
+					method: "taxi.taxi.doctype.trip_order.trip_order.get_customer_subsc",
+					args: {date: frm.doc.posting_date, party_type: 'Customer', party: frm.doc.customer, docname: frm.doc.name},
+					callback: function(r) {
+
+//                                              frappe.msgprint(__("The customer has this subscription ref: {0} and he is {1} Subscribed and these are its details {2} and {3}", [r.message[0], r.message[1], r.message[2][0]['status'], r.message[2][1]['status']]));
+						if (r.message[1] == 'Yes') {
+							cur_frm.set_value("not_subsc_order", 0);
+							refresh_field('not_subsc_order');
+						}
+						cur_frm.set_value("subscriber_or_not", r.message[1]);
+						cur_frm.set_value("subscription_ref", r.message[0]);
+//                                              msgprint(r.message);
+//                                              cur_frm.set_value("customer_balance", r.message);
+//                                              frm.doc.customer_balance = 1000
+//                                              frm.doc.customer_balance = format_currency(r.message, erpnext.get_currency(frm.doc.company));
+//                                              refresh_field('customer_balance');
+						var trip_order_subsc_hops = r.message[2];
+						trip_order_subsc_hops_filling(frm, trip_order_subsc_hops);
+					}
+				});
+			}
+
+
 //		confirm("Test Message");
 //		prompt("Test Message");
 //		alert("Test Message");
@@ -164,8 +259,59 @@ frappe.ui.form.on('Trip Order', {
 //				show_alert('Thank you for continue')
 //			});
 //		frappe.show_alert({message: __("Tesing"), indicator: 'green'});
+		}
 	},
 
+
+	not_subsc_order: function(frm, cdt, cdn) {
+		if (frm.doc.not_subsc_order == 0)
+		{
+			var pickup_place, dropoff_place;
+			var j = 0;
+			$.each(frm.doc.subsc_hops, function(i, row) {
+				if ((row.hop_subsc_status == "Available") && (row.order == "Buy")) {
+					if (j == 0) {
+						if (row.hop_from != null) {
+							pickup_place = row.hop_from;
+							dropoff_place = row.hop_to;
+						}
+						else {
+							pickup_place = frm.doc.subsc_hops[i-1].hop_to;
+							dropoff_place = row.hop_to;
+						}
+						j = j + 1;
+					}
+					else {
+						dropoff_place = row.hop_to;
+					}
+				}
+			});
+			frm.set_value("origination_place", pickup_place);
+			frm.set_value("final_destination", dropoff_place);
+			refresh_field("origination_place");
+			refresh_field("final_destination");
+		}
+		else {
+			cur_frm.clear_table("hops");
+			cur_frm.clear_table("bus_hops");
+			refresh_field("hops");
+			refresh_field("bus_hops");
+			frm.set_value('rate_factor_for_the_vehicle', 0);
+			frm.set_value('buying_price', 0);
+			frm.set_value('selling_price', 0);
+			frm.set_value('final_destination', 'Not Selected');
+			frm.set_value('origination_place', null);
+			frm.set_value('total_price', 0);
+			frm.set_value('discounted_amount', 0.00);
+			frm.set_value('discounted_percentage_event', 0);
+			frm.set_value('discounted_amount_event', 0);
+			frm.set_value('cash_amount', 0.00);
+			frm.set_value('grand_total', frm.doc.total_price);
+			frm.set_value('credit_amount', frm.doc.grand_total);
+			frm.set_value('outstanding_amount', frm.doc.credit_amount);
+			frm.set_value('type_of_vehicle', null);
+		}
+	},
 
 	type_of_service: function(frm, cdt, cdn) {
 	
@@ -179,7 +325,8 @@ frappe.ui.form.on('Trip Order', {
 		frm.set_value('rate_factor_for_the_vehicle', 0);
 		frm.set_value('buying_price', 0);
 		frm.set_value('selling_price', 0);
-		frm.set_value('final_destination', null);
+		frm.set_value('final_destination', 'Not Selected');
+		frm.set_value('origination_place', null);
 		frm.set_value('total_price', 0);
 		frm.set_value('discounted_amount', 0.00);
 		frm.set_value('discounted_percentage_event', 0);
@@ -247,7 +394,7 @@ frappe.ui.form.on('Trip Order', {
 				}
 			})
 			cur_frm.set_value("order_status", "Assigned");
-			//frappe.msgprint(__("Changes happened at {0}", [frm.doc.hops[(item_selected.idx) - 2].to]));
+			//frappe.msgprint(__("Changes happened at {0}", [frm.doc.hops[(item_selected.idx) - 2].hop_to]));
 //			var timetest = moment(frm.doc.test_time, "HH:mm:ss A");
 //			frappe.msgprint(__("Amount value for time {0}", [timetest.hour()]));
 //			frappe.msgprint(__("Amount value for time {0}", [timetest.minute()]));
@@ -310,6 +457,14 @@ frappe.ui.form.on('Trip Order', {
 });
 
 
+frappe.ui.form.on('Trip Order Subscriber Hops', {
+
+	order: function(frm, cdt, cdn) {
+		subsc_hops_action(frm, cdt, cdn);
+        }
+});
+
+
 frappe.ui.form.on('Trip Order Bus Hops', {
 
 	bus_hops_remove: function(frm, cdt, cdn) {
@@ -318,10 +473,10 @@ frappe.ui.form.on('Trip Order Bus Hops', {
 
 	},
 
-	to: function(frm, cdt, cdn) {
+	hop_to: function(frm, cdt, cdn) {
 
 		bus_hops_action(frm, cdt, cdn);
-	},
+	}
 
 });
 
@@ -414,7 +569,7 @@ frappe.ui.form.on('Trip Order Hops', {
 		}
 		else
 			item_selected.to_metric = item_selected.ozw_metric;
-		//frappe.msgprint(__("Changes happened at {0}", [frm.doc.hops[(item_selected.idx) - 2].to]));
+		//frappe.msgprint(__("Changes happened at {0}", [frm.doc.hops[(item_selected.idx) - 2].hop_to]));
 		$.each(frm.doc.hops, function(i, row) {
 			if (row.ozw == 1) {
 				if (flt (i) == 0)
@@ -497,7 +652,7 @@ var hops_calculation = function(frm, cdt, cdn) {
 						}
 					})
 					if ((rows_quantity-1) >= 0) {
-						frm.set_value('final_destination', frm.doc.hops[rows_quantity-1].to);
+						frm.set_value('final_destination', frm.doc.hops[rows_quantity-1].hop_to);
 					}
 					else
 						frm.set_value('final_destination', "Not Selected");
@@ -515,9 +670,99 @@ var hops_calculation = function(frm, cdt, cdn) {
 		frappe.msgprint(__("Please select type of vehicle"));
 }
 
+var subsc_hops_action = function(frm, cdt, cdn) {
+	frm.set_value('total_price_for_subscription_order', 0.00);
+	var pickup_place, dropoff_place;
+	var j = 0;
+	$.each(frm.doc.subsc_hops, function(i, row) {
+		if ((row.hop_subsc_status == "Available") && (row.order == "Buy")) {
+			if (j == 0) {
+				if (row.hop_from != null) {
+					pickup_place = row.hop_from;
+					dropoff_place = row.hop_to;
+				}
+				else {
+					pickup_place = frm.doc.subsc_hops[i-1].hop_to;
+					dropoff_place = row.hop_to;
+				}
+				j = j + 1;
+			}
+			else {
+				dropoff_place = row.hop_to;
+			}
+			frm.set_value('total_price_for_subscription_order', flt(frm.doc.total_price_for_subscription_order) + flt(row.trip_price));
+		}
+	});
+	if (frm.doc.not_subsc_order == 0) {
+		frm.set_value("origination_place", pickup_place);
+		frm.set_value("final_destination", dropoff_place);
+		refresh_field("origination_place");
+		refresh_field("final_destination");
+	}
+	refresh_field("total_price_for_subscription_order");
+}
+
+
 
 var bus_hops_action = function(frm, cdt, cdn) {
 
 
-	frm.set_value('final_destination', frm.doc.bus_hops[((frm.doc.bus_hops.length) -1)].to);
+	frm.set_value('final_destination', frm.doc.bus_hops[((frm.doc.bus_hops.length) -1)].hop_to);
+
 }
+
+var trip_order_subsc_hops_filling = function(frm, trip_order_subsc_hops) {
+//	frappe.msgprint(__("Welcome: {0}", [trip_order_subsc_hops[0]['hop_from']]));
+//      frappe.msgprint(__("Welcome Not Commission: {0}"));
+        cur_frm.clear_table("subsc_hops");
+	frm.set_value('total_price_for_subscription_order', 0.00);
+        var new_row;
+	var pickup_place, dropoff_place;
+	var j = 0;
+//      var total_orders_amount = 0.00;
+//      var total_cash_orders_amount = 0.00;
+//      var total_credit_orders_amount = 0.00;
+//      var collected_money_within_orders = 0.00;
+//      frappe.msgprint(__("Welcome Not Commission: {0}"));
+        $.each(trip_order_subsc_hops, function(i, row) {
+
+		new_row = frappe.model.add_child(cur_frm.doc, "Trip Order Subscriber Hops", "subsc_hops");
+                new_row.hop_from = row.hop_from;
+                new_row.hop_to = row.hop_to;
+                new_row.hop_subsc_status = row.hop_subsc_status;
+                new_row.trip_order_ref =  row.trip_order_ref;
+                new_row.trip_order_status =  row.trip_order_status;
+                new_row.trip_order_date =  row.trip_order_date;
+                new_row.subsc_ref =  row.subsc_ref;
+                new_row.hop_price =  row.hop_price;
+                new_row.trip_price =  row.trip_price;
+                new_row.order =  row.order;
+		if (row.hop_subsc_status == "Available" && row.order == "Buy") {
+			if (j == 0) {
+				if (row.hop_from != null) {
+					pickup_place = row.hop_from;
+					dropoff_place = row.hop_to;
+				}
+				else {
+					pickup_place = frm.doc.subsc_hops[i-1].hop_to;
+					dropoff_place = row.hop_to;
+				}
+				j = j + 1;
+			}
+			else {
+				dropoff_place = row.hop_to;
+			}
+			frm.set_value('total_price_for_subscription_order', flt(frm.doc.total_price_for_subscription_order) + flt(row.trip_price));
+		}
+
+	});
+	if (frm.doc.not_subsc_order == 0) {
+		frm.set_value("origination_place", pickup_place);
+		frm.set_value("final_destination", dropoff_place);
+		refresh_field("origination_place");
+		refresh_field("final_destination");
+	}
+	refresh_field("total_price_for_subscription_order");
+	refresh_field("subsc_hops");
+}
+
