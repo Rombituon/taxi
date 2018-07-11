@@ -8,7 +8,8 @@ from frappe import _, scrub, ValidationError, msgprint
 from frappe.model.document import Document, _
 from frappe import utils
 import datetime
-from frappe.utils import flt, comma_or, nowdate
+from datetime import timedelta
+from frappe.utils import flt, comma_or, nowdate, now, global_date_format, format_time, getdate
 from erpnext.accounts.utils import get_outstanding_invoices, get_account_currency, get_balance_on
 from erpnext.accounts.party import get_party_account
 #from erpnext.accounts.doctype.sales_invoice.sales_invoice import get_bank_cash_account
@@ -346,11 +347,11 @@ def get_origination(doctype, txt, searchfield, start, page_len, filters):
 @frappe.whitelist()
 def get_customer_subsc(date, party_type, party, docname=None):
 
-
+	weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 #	frappe.msgprint("The receiving date is {0}". format(date))
 
-        get_subscription = frappe.db.sql("""select name from `tabTaxi Subscription` where customer = %s and active = 'Yes'
+        get_subscription = frappe.db.sql("""select name, weekly_off1, weekly_off2 from `tabTaxi Subscription` where customer = %s and active = 'Yes'
 		and end_date >= date(%s)
                 and docstatus = 1
                 """, (party, date), as_dict=True)
@@ -379,116 +380,138 @@ def get_customer_subsc(date, party_type, party, docname=None):
 	
 			if (docname is not None):
 
-				if d['hop_from'] is None:
-
-					get_subs_hops_info =  frappe.db.sql("""select parent as trip_order, docstatus, creation, `order`, 
-						trip_order_ref, hop_subsc_status, trip_price
-						from `tabTrip Order Subscriber Hops`
-						where `from` is null and `hop_to` = %s and subsc_ref = %s and docstatus != 2
-						and hop_subsc_status = "Available"
-						and (`order` = "Buy" or `order` = "Compensate")
-						and parent in (select name from `tabTrip Order` where date(posting_date) = date(%s))
-	        		       		""", (d['hop_to'], d['subsc_ref'], date), as_dict=True)
+				post_date = getdate(date)
+				if (get_subscription[0]['weekly_off1'] == weekdays[post_date.weekday()] or get_subscription[0]['weekly_off2'] == weekdays[post_date.weekday()]):
+					trip_order_subsc_hops[i]['hop_subsc_status'] = "Day Off"
+					trip_order_subsc_hops[i]['order'] = "Not Allowed"
+					trip_order_subsc_hops[i]['note'] = weekdays[post_date.weekday()]
+					trip_order_subsc_hops[i]['trip_price'] = float (trip_order_subsc_hops[i]['hop_price']) * 0.8
 				else:
 
-					get_subs_hops_info =  frappe.db.sql("""select parent as trip_order, docstatus, creation, `order`, 
-						trip_order_ref, hop_subsc_status, trip_price
-						from `tabTrip Order Subscriber Hops`
-						where `hop_from` = %s and `hop_to` = %s and subsc_ref = %s and docstatus != 2
-						and hop_subsc_status = "Available"
-						and (`order` = "Buy" or `order` = "Compensate")
-						and parent in (select name from `tabTrip Order` where date(posting_date) = date(%s))
-        				       	""", (d['hop_from'], d['hop_to'], d['subsc_ref'], date), as_dict=True)
+					if d['hop_from'] is None:
 
-
-				if (len(get_subs_hops_info) == 0):
-					trip_order_subsc_hops[i]['hop_subsc_status'] = "Available"
-					subsc_hops[i].hop_subsc_status = "Available"
-					trip_order_subsc_hops[i]['trip_price'] = float (trip_order_subsc_hops[i]['hop_price']) * 0.8				
-					subsc_hops[i].hop_price = float (trip_order_subsc_hops[i]['hop_price'])
-					subsc_hops[i].trip_price = float (trip_order_subsc_hops[i]['hop_price']) * 0.8
-					subsc_hops[i].order = None
-
-				elif get_subs_hops_info[0]['trip_order'] == docname:
-				
-					trip_order_subsc_hops[i]['hop_subsc_status'] = subsc_hops[i].hop_subsc_status
-					trip_order_subsc_hops[i]['order'] = subsc_hops[i].order
-					trip_order_subsc_hops[i]['trip_price'] = float (trip_order_subsc_hops[i]['hop_price']) * 0.8
-					subsc_hops[i].hop_price = float (trip_order_subsc_hops[i]['hop_price'])
-					subsc_hops[i].trip_price = float (trip_order_subsc_hops[i]['hop_price']) * 0.8
-
-
-				elif get_subs_hops_info[0]['trip_order'] != docname:
-
-					trip_order_subsc_hops[i]['hop_subsc_status'] = "Taken"
-					subsc_hops[i].hop_subsc_status = "Taken"
-					trip_order_subsc_hops[i]['trip_order_ref'] = get_subs_hops_info[0]['trip_order']
-					subsc_hops[i].trip_order_ref = get_subs_hops_info[0]['trip_order']
-					doc = frappe.get_doc('Trip Order', get_subs_hops_info[0]['trip_order'])
-					trip_order_subsc_hops[i]['trip_order_date'] = doc.posting_date
-					subsc_hops[i].trip_order_date = doc.posting_date
-					trip_order_subsc_hops[i]['order'] = "Not Allowed"
-					subsc_hops[i].order = "Not Allowed"
-					trip_order_subsc_hops[i]['trip_price'] = float (trip_order_subsc_hops[i]['hop_price']) * 0.8
-					subsc_hops[i].hop_price = float (trip_order_subsc_hops[i]['hop_price'])
-					subsc_hops[i].trip_price = float (trip_order_subsc_hops[i]['hop_price']) * 0.8
-					if get_subs_hops_info[0]['docstatus'] == 0:
-						trip_order_subsc_hops[i]['trip_order_status'] = "Draft"
-						subsc_hops[i].trip_order_status = "Draft"
+						get_subs_hops_info =  frappe.db.sql("""select parent as trip_order, docstatus, creation, `order`, 
+							trip_order_ref, hop_subsc_status, trip_price
+							from `tabTrip Order Subscriber Hops`
+							where `from` is null and `hop_to` = %s and subsc_ref = %s and docstatus != 2
+							and hop_subsc_status = "Available"
+							and (`order` = "Buy" or `order` = "Compensate")
+							and parent in (select name from `tabTrip Order` where date(posting_date) = date(%s))
+		        		       		""", (d['hop_to'], d['subsc_ref'], date), as_dict=True)
 					else:
-						trip_order_subsc_hops[i]['trip_order_status'] = "Submitted"
-						subsc_hops[i].trip_order_status = "Submitted"
+
+						get_subs_hops_info =  frappe.db.sql("""select parent as trip_order, docstatus, creation, `order`, 
+							trip_order_ref, hop_subsc_status, trip_price
+							from `tabTrip Order Subscriber Hops`
+							where `hop_from` = %s and `hop_to` = %s and subsc_ref = %s and docstatus != 2
+							and hop_subsc_status = "Available"
+							and (`order` = "Buy" or `order` = "Compensate")
+							and parent in (select name from `tabTrip Order` where date(posting_date) = date(%s))
+        					       	""", (d['hop_from'], d['hop_to'], d['subsc_ref'], date), as_dict=True)
+
+
+					if (len(get_subs_hops_info) == 0):
+						trip_order_subsc_hops[i]['hop_subsc_status'] = "Available"
+						subsc_hops[i].hop_subsc_status = "Available"
+						trip_order_subsc_hops[i]['trip_price'] = float (trip_order_subsc_hops[i]['hop_price']) * 0.8				
+						subsc_hops[i].hop_price = float (trip_order_subsc_hops[i]['hop_price'])
+						subsc_hops[i].trip_price = float (trip_order_subsc_hops[i]['hop_price']) * 0.8
+						subsc_hops[i].order = None
+
+					elif get_subs_hops_info[0]['trip_order'] == docname:
+				
+						trip_order_subsc_hops[i]['hop_subsc_status'] = subsc_hops[i].hop_subsc_status
+						trip_order_subsc_hops[i]['order'] = subsc_hops[i].order
+						trip_order_subsc_hops[i]['trip_price'] = float (trip_order_subsc_hops[i]['hop_price']) * 0.8
+						subsc_hops[i].hop_price = float (trip_order_subsc_hops[i]['hop_price'])
+						subsc_hops[i].trip_price = float (trip_order_subsc_hops[i]['hop_price']) * 0.8
+
+
+					elif get_subs_hops_info[0]['trip_order'] != docname:
+
+						trip_order_subsc_hops[i]['hop_subsc_status'] = "Taken"
+						subsc_hops[i].hop_subsc_status = "Taken"
+						trip_order_subsc_hops[i]['trip_order_ref'] = get_subs_hops_info[0]['trip_order']
+						subsc_hops[i].trip_order_ref = get_subs_hops_info[0]['trip_order']
+						doc = frappe.get_doc('Trip Order', get_subs_hops_info[0]['trip_order'])
+						trip_order_subsc_hops[i]['trip_order_date'] = doc.posting_date
+						subsc_hops[i].trip_order_date = doc.posting_date
+						trip_order_subsc_hops[i]['order'] = "Not Allowed"
+						subsc_hops[i].order = "Not Allowed"
+						trip_order_subsc_hops[i]['trip_price'] = float (trip_order_subsc_hops[i]['hop_price']) * 0.8
+						subsc_hops[i].hop_price = float (trip_order_subsc_hops[i]['hop_price'])
+						subsc_hops[i].trip_price = float (trip_order_subsc_hops[i]['hop_price']) * 0.8
+						if get_subs_hops_info[0]['docstatus'] == 0:
+							trip_order_subsc_hops[i]['trip_order_status'] = "Draft"
+							subsc_hops[i].trip_order_status = "Draft"
+						else:
+							trip_order_subsc_hops[i]['trip_order_status'] = "Submitted"
+							subsc_hops[i].trip_order_status = "Submitted"
 
 					
 
-#					frappe.msgprint("Welcome for saved document scenario for document name: {0} and the following subscriber data: {1}". format(docname, subsc_hops[i].hop_from))
+#						frappe.msgprint("Welcome for saved document scenario for document name: {0} and the following subscriber data: {1}". format(docname, subsc_hops[i].hop_from))
 
 			else:
-
-				if d['hop_from'] is None:
-
-					get_subs_hops_info =  frappe.db.sql("""select parent as trip_order, docstatus, creation, `order`, 
-						trip_order_ref, hop_subsc_status, trip_price
-						from `tabTrip Order Subscriber Hops`
-						where `from` is null and `hop_to` = %s and subsc_ref = %s and docstatus != 2
-						and hop_subsc_status = "Available"
-						and (`order` = "Buy" or `order` = "Compensate")
-						and parent in (select name from `tabTrip Order` where date(posting_date) = date(%s))
-	        		       		""", (d['hop_to'], d['subsc_ref'], date), as_dict=True)
-			
-				else:
-					get_subs_hops_info =  frappe.db.sql("""select parent as trip_order, docstatus, creation, `order`, 
-						trip_order_ref, hop_subsc_status, trip_price
-						from `tabTrip Order Subscriber Hops`
-						where `hop_from` = %s and `hop_to` = %s and subsc_ref = %s and docstatus != 2
-						and hop_subsc_status = "Available"
-						and (`order` = "Buy" or `order` = "Compensate")
-						and parent in (select name from `tabTrip Order` where date(posting_date) = date(%s))
-        				       	""", (d['hop_from'], d['hop_to'], d['subsc_ref'], date), as_dict=True)
-
-
-#				frappe.msgprint("This is the get_subs_hops_info {0} and its length is {1} and the Subscribed in subscription ref {2} and these are its hops {3} and {4}". format(party, subscribed, get_subscription, get_subsc_hops[0], get_subsc_hops[1]))
-
-				if (len(get_subs_hops_info) == 0):
-					trip_order_subsc_hops[i]['hop_subsc_status'] = "Available"
-					trip_order_subsc_hops[i]['trip_price'] = float (trip_order_subsc_hops[i]['hop_price']) * 0.8
-				else:
-
-					trip_order_subsc_hops[i]['hop_subsc_status'] = "Taken"
+#				if date.weekday() in 
+				post_date = getdate(date)
+				if (get_subscription[0]['weekly_off1'] == weekdays[post_date.weekday()] or get_subscription[0]['weekly_off2'] == weekdays[post_date.weekday()]):
+					trip_order_subsc_hops[i]['hop_subsc_status'] = "Day Off"
 					trip_order_subsc_hops[i]['order'] = "Not Allowed"
-					trip_order_subsc_hops[i]['trip_price'] = get_subs_hops_info[0]['trip_price']
-					trip_order_subsc_hops[i]['trip_order_ref'] = get_subs_hops_info[0]['trip_order']
-					if get_subs_hops_info[0]['docstatus'] == 0:
-						trip_order_subsc_hops[i]['trip_order_status'] = "Draft"
-					else:
-						trip_order_subsc_hops[i]['trip_order_status'] = "Submitted"
+					trip_order_subsc_hops[i]['note'] = weekdays[post_date.weekday()]
+					trip_order_subsc_hops[i]['trip_price'] = float (trip_order_subsc_hops[i]['hop_price']) * 0.8
 
-					doc = frappe.get_doc('Trip Order', get_subs_hops_info[0]['trip_order'])
-					trip_order_subsc_hops[i]['trip_order_date'] = doc.posting_date
+#				now = frappe.utils.now_datetime()
+#				frappe.msgprint("The day of the post date is {0}". format(now.weekday()))
+#					frappe.msgprint("The day of the post date is {0}". format(post_date))
+#					frappe.msgprint("The day of the post date is {0}". format(post_date.weekday()))
+#					frappe.msgprint("The day of the post date is {0}". format(weekdays[post_date.weekday()]))
+				else:
+
+					if d['hop_from'] is None:
+
+						get_subs_hops_info =  frappe.db.sql("""select parent as trip_order, docstatus, creation, `order`, 
+							trip_order_ref, hop_subsc_status, trip_price
+							from `tabTrip Order Subscriber Hops`
+							where `from` is null and `hop_to` = %s and subsc_ref = %s and docstatus != 2
+							and hop_subsc_status = "Available"
+							and (`order` = "Buy" or `order` = "Compensate")
+							and parent in (select name from `tabTrip Order` where date(posting_date) = date(%s))
+		        		       		""", (d['hop_to'], d['subsc_ref'], date), as_dict=True)
+			
+					else:
+						get_subs_hops_info =  frappe.db.sql("""select parent as trip_order, docstatus, creation, `order`, 
+							trip_order_ref, hop_subsc_status, trip_price
+							from `tabTrip Order Subscriber Hops`
+							where `hop_from` = %s and `hop_to` = %s and subsc_ref = %s and docstatus != 2
+							and hop_subsc_status = "Available"
+							and (`order` = "Buy" or `order` = "Compensate")
+							and parent in (select name from `tabTrip Order` where date(posting_date) = date(%s))
+        					       	""", (d['hop_from'], d['hop_to'], d['subsc_ref'], date), as_dict=True)
+
+
+#					frappe.msgprint("This is the get_subs_hops_info {0} and its length is {1} and the Subscribed in subscription ref {2} and these are its hops {3} and {4}". format(party, subscribed, get_subscription, get_subsc_hops[0], get_subsc_hops[1]))
+
+					if (len(get_subs_hops_info) == 0):
+						trip_order_subsc_hops[i]['hop_subsc_status'] = "Available"
+						trip_order_subsc_hops[i]['trip_price'] = float (trip_order_subsc_hops[i]['hop_price']) * 0.8
+					else:
+
+						trip_order_subsc_hops[i]['hop_subsc_status'] = "Taken"
+						trip_order_subsc_hops[i]['order'] = "Not Allowed"
+						trip_order_subsc_hops[i]['trip_price'] = get_subs_hops_info[0]['trip_price']
+						trip_order_subsc_hops[i]['trip_order_ref'] = get_subs_hops_info[0]['trip_order']
+						if get_subs_hops_info[0]['docstatus'] == 0:
+							trip_order_subsc_hops[i]['trip_order_status'] = "Draft"
+						else:
+							trip_order_subsc_hops[i]['trip_order_status'] = "Submitted"
+
+						doc = frappe.get_doc('Trip Order', get_subs_hops_info[0]['trip_order'])
+						trip_order_subsc_hops[i]['trip_order_date'] = doc.posting_date
 			i = i + 1 
 	
 
-#			frappe.msgprint("The subscriber {0} is {1} Subscribed in subscription ref {2} and these are its hops {3} and {4}". format(party, subscribed, get_subscription, get_subsc_hops[0], get_subsc_hops[1]))
+#				frappe.msgprint("The subscriber {0} is {1} Subscribed in subscription ref {2} and these are its hops {3} and {4}". format(party, subscribed, get_subscription, get_subsc_hops[0], get_subsc_hops[1]))
 
 	else:
 		subscribed = 'No'

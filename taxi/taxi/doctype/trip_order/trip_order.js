@@ -95,6 +95,18 @@ frappe.ui.form.on('Trip Order', {
 
 
 
+		frm.set_query("order", "subsc_hops", function(doc, cdt, cdn) {
+
+			var item_selected = locals[cdt][cdn];
+			return {
+				filters: {
+					'status': item_selected['hop_subsc_status']
+				}
+			};
+		});
+
+
+
 		frm.set_query("hop_to", "hops", function(doc, cdt, cdn) {
 			return {
 				filters: {
@@ -269,7 +281,7 @@ frappe.ui.form.on('Trip Order', {
 			var pickup_place, dropoff_place;
 			var j = 0;
 			$.each(frm.doc.subsc_hops, function(i, row) {
-				if ((row.hop_subsc_status == "Available") && (row.order == "Buy")) {
+				if ((row.hop_subsc_status == "Available") && (row.order == "Buy" || row.order == "Compensate")) {
 					if (j == 0) {
 						if (row.hop_from != null) {
 							pickup_place = row.hop_from;
@@ -675,7 +687,7 @@ var subsc_hops_action = function(frm, cdt, cdn) {
 	var pickup_place, dropoff_place;
 	var j = 0;
 	$.each(frm.doc.subsc_hops, function(i, row) {
-		if ((row.hop_subsc_status == "Available") && (row.order == "Buy")) {
+		if ((row.hop_subsc_status == "Available") && (row.order == "Buy" || row.order == "Compensate")) {
 			if (j == 0) {
 				if (row.hop_from != null) {
 					pickup_place = row.hop_from;
@@ -736,6 +748,7 @@ var trip_order_subsc_hops_filling = function(frm, trip_order_subsc_hops) {
                 new_row.subsc_ref =  row.subsc_ref;
                 new_row.hop_price =  row.hop_price;
                 new_row.trip_price =  row.trip_price;
+                new_row.note =  row.note;
                 new_row.order =  row.order;
 		if (row.hop_subsc_status == "Available" && row.order == "Buy") {
 			if (j == 0) {

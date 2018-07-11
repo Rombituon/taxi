@@ -15,23 +15,12 @@ def get_data():
                                         "type": "doctype",
                                         "name": "Taxi Subscription",
                                         "description": _("Taxi Subscription"),
-                                },
-                                {
-                                        "type": "doctype",
-                                        "name": "Type of Service",
-                                        "description": _("Type of Service"),
                                 }
 			]
 		},
 		{
                         "label": _("Taxi Fleet Management"),
                         "items": [
-                                {
-                                        "type": "doctype",
-                                        "name": "Type of Vehicle",
-#                                        "description": _("Taxi Vehicle"),
-                                        "label": _("Type of Vehicle"),
-                                },
                                 {
                                         "type": "doctype",
                                         "name": "Vehicle",
@@ -78,7 +67,18 @@ def get_data():
 					"type": "doctype",
 					"name": "Route Pricing Settings",
 					"description": _("Route Pricing Settings"),
-				},	
+				},
+                                {
+                                        "type": "doctype",
+                                        "name": "Type of Vehicle",
+#                                        "description": _("Taxi Vehicle"),
+                                        "label": _("Type of Vehicle"),
+                                },
+                                {
+                                        "type": "doctype",
+                                        "name": "Type of Service",
+                                        "description": _("Type of Service"),
+                                },
 				{
 					"type": "doctype",
 					"name": "Order Options For Subscription Hop Status",
