@@ -55,59 +55,108 @@ class ClearanceWithDriver(AccountsController):
 
 	def make_gl_entries(self):
 
-		rec_pay_gl_entries =  self.get_gl_dict({
-        		"account": self.receiving_payment_account,
-#                	"party_type": "Employee",
-#                	"party": self.driver,
-                	"against": self.driver_cash_account,
-                	"debit": self.amount_to_us,
-                	"debit_in_account_currency": self.amount_to_us,
-			"voucher_no": self.name,
-                	"against_voucher": self.name,
-			"against_voucher_type": self.doctype
-		})
-
-                from_emp_gl_entry = self.get_gl_dict({
-                        "account": self.driver_cash_account,
-                        "against": self.driver,
-                        "credit": self.amount_to_us,
-                        "credit_in_account_currency": self.amount_to_us,
-                	"against_voucher": self.name,
-			"against_voucher_type": self.doctype,
-                        "cost_center": self.cost_center
-                })
-
-
-                pay_to_gl_entries =  self.get_gl_dict({
-                        "account": self.expenses_account,
-                        "party_type": "Employee",
-                        "party": self.driver,
-                        "against": self.account_paid_from,
-                        "debit": self.amount_to_driver,
-                        "debit_in_account_currency": self.amount_to_driver,
-			"voucher_no": self.name,
-			"cost_center": self.cost_center
-                })
-
-                pay_from_gl_entry = self.get_gl_dict({
-                        "account": self.account_paid_from,
-                        "against": self.driver,
-                        "credit": self.amount_to_driver,
-                        "credit_in_account_currency": self.amount_to_driver,
-                	"against_voucher": self.name,
-			"against_voucher_type": self.doctype,
-                        "cost_center": self.cost_center
-                })
-
-
 		if (self.amount_to_us > 0 and self.amount_to_driver == 0):
 
-                	make_gl_entries([rec_pay_gl_entries, from_emp_gl_entry], cancel=(self.docstatus == 2),
+			pay_to_gl_entry =  self.get_gl_dict({
+				"account": self.expenses_account,
+				"party_type": "Employee",
+				"party": self.driver,
+				"against": self.driver_cash_account,
+				"debit": self.amount_due_to_driver_cal,
+				"debit_in_account_currency": self.amount_due_to_driver_cal,
+				"voucher_no": self.name,
+				"cost_center": self.cost_center
+			})
+
+			from_driver_gl_entry = self.get_gl_dict({
+				"account": self.driver_cash_account,
+				"against": self.driver,
+				"credit": self.amount_due_to_driver_cal,
+				"credit_in_account_currency": self.amount_due_to_driver_cal,
+				"against_voucher": self.name,
+				"against_voucher_type": self.doctype,
+				"cost_center": self.cost_center
+			})
+
+			if (self.amount_due_to_driver_cal > 0):
+	                	make_gl_entries([pay_to_gl_entry, from_driver_gl_entry], cancel=(self.docstatus == 2),	
+        	                	update_outstanding="Yes", merge_entries=False)
+
+			rec_pay_gl_entry =  self.get_gl_dict({
+				"account": self.receiving_payment_account,
+				"against": self.driver_cash_account,
+				"debit": self.amount_to_us,
+				"debit_in_account_currency": self.amount_to_us,
+				"voucher_no": self.name,
+				"cost_center": self.cost_center
+			})
+
+
+			from_driver_gl_entry = self.get_gl_dict({
+				"account": self.driver_cash_account,
+				"against": self.receiving_payment_account,
+				"credit": self.amount_to_us,
+				"credit_in_account_currency": self.amount_to_us,
+				"against_voucher": self.name,
+				"against_voucher_type": self.doctype,
+				"cost_center": self.cost_center
+			})
+
+			make_gl_entries([rec_pay_gl_entry, from_driver_gl_entry], cancel=(self.docstatus == 2),
                         	update_outstanding="Yes", merge_entries=False)
 
 		elif (self.amount_to_driver > 0 and self.amount_to_us == 0):
 			
-                        make_gl_entries([pay_from_gl_entry, pay_to_gl_entries], cancel=(self.docstatus == 2),
+			pay_to_gl_entry =  self.get_gl_dict({
+				"account": self.expenses_account,
+				"party_type": "Employee",
+				"party": self.driver,
+				"against": self.driver_cash_account,
+				"debit": self.cash_with_him,
+				"debit_in_account_currency": self.cash_with_him,
+				"voucher_no": self.name,
+				"cost_center": self.cost_center
+			})
+
+			from_driver_gl_entry = self.get_gl_dict({
+				"account": self.driver_cash_account,
+				"against": self.driver,
+				"credit": self.cash_with_him,
+				"credit_in_account_currency": self.cash_with_him,
+				"against_voucher": self.name,
+				"against_voucher_type": self.doctype,
+				"cost_center": self.cost_center
+			})
+
+
+			if (self.cash_with_him > 0.5):
+	                        make_gl_entries([pay_to_gl_entry, from_driver_gl_entry], cancel=(self.docstatus == 2),
+        	                        update_outstanding="Yes", merge_entries=False)
+
+			pay_to_gl_entry =  self.get_gl_dict({
+				"account": self.expenses_account,
+				"party_type": "Employee",
+				"party": self.driver,
+				"against": self.account_paid_from,
+				"debit": self.amount_to_driver,
+				"debit_in_account_currency": self.amount_to_driver,
+				"voucher_no": self.name,
+				"voucher_type": self.doctype,
+				"cost_center": self.cost_center
+			})
+
+
+			pay_from_gl_entry = self.get_gl_dict({
+				"account": self.account_paid_from,
+				"against": self.driver,
+				"credit": self.amount_to_driver,
+				"credit_in_account_currency": self.amount_to_driver,
+				"voucher_no": self.name,
+				"voucher_type": self.doctype,
+				"cost_center": self.cost_center
+			})
+
+                        make_gl_entries([pay_to_gl_entry, pay_from_gl_entry], cancel=(self.docstatus == 2),
                                 update_outstanding="Yes", merge_entries=False)
 
 
