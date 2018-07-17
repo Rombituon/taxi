@@ -1,6 +1,9 @@
 // Copyright (c) 2017, Bilal Ghayad and contributors
 // For license information, please see license.txt
 
+cur_frm.add_fetch('customer', 'customer_name', 'customer_name')
+cur_frm.add_fetch('address_title', 'address_line1', 'address_line1')
+cur_frm.add_fetch('address_title', 'address_line2', 'address_line2')
 cur_frm.add_fetch('assigned_driver', 'employee_name', 'driver_name')
 cur_frm.add_fetch('assigned_driver', 'money_collection_account', 'driver_cash_account')
 cur_frm.add_fetch('origination_place','metric','origin_metric')
@@ -83,6 +86,16 @@ frappe.ui.form.on('Trip Order', {
 //				filters: {'itemgroup': 'Taxi Hop'}
 //			}
 //		});
+
+                frm.set_query("address_title", function(doc) {
+                        return {
+                                query: 'frappe.contacts.doctype.address.address.address_query',
+                                filters: {
+                                        link_doctype: 'Customer',
+                                        link_name: frm.doc.customer
+                                }
+                        }
+                });
 
 
 		frm.set_query("type_of_vehicle", function(doc) {
@@ -173,7 +186,7 @@ frappe.ui.form.on('Trip Order', {
 
 	update: function(frm, cdt, cdn) {
 		if (cur_frm.doc.customer) {
-			if (frm.doc.docstatus === 0){
+			if (frm.doc.docstatus === 0 && frm.doc.__islocal != 1){
 				frappe.call({
 					method: "taxi.taxi.doctype.trip_order.trip_order.get_customer_subsc",
 					args: {date: frm.doc.posting_date, party_type: 'Customer', party: frm.doc.customer, docname: frm.doc.name},
@@ -189,6 +202,22 @@ frappe.ui.form.on('Trip Order', {
 					}
 				});
 			}
+//			else if (frm.doc.__islocal === 1) {
+//				frappe.call({
+//					method: "taxi.taxi.doctype.trip_order.trip_order.get_customer_subsc",
+//					args: {date: frm.doc.posting_date, party_type: 'Customer', party: frm.doc.customer},
+//					callback: function(r) {
+//						if (r.message[1] == 'Yes') {
+//							cur_frm.set_value("not_subsc_order", 0);
+//							refresh_field('not_subsc_order');
+//						}
+//						cur_frm.set_value("subscriber_or_not", r.message[1]);
+//						cur_frm.set_value("subscription_ref", r.message[0]);
+//						var trip_order_subsc_hops = r.message[2];
+//						trip_order_subsc_hops_filling(frm, trip_order_subsc_hops);
+//					}
+//				});
+//			}
 		}
 	},
 
@@ -200,7 +229,12 @@ frappe.ui.form.on('Trip Order', {
 				args: {date: frm.doc.transaction_date, party_type: 'Customer', party: frm.doc.customer},
 				callback: function(r) {
 					//msgprint(r.message);
-					cur_frm.set_value("customer_balance", r.message);
+					if (flt(r.message) == 0) {
+						cur_frm.set_value("customer_balance", "0.00");
+					}
+					else {
+						cur_frm.set_value("customer_balance", r.message);
+					}
 					//frm.doc.customer_balance = 1000
 					//frm.doc.customer_balance = format_currency(r.message, erpnext.get_currency(frm.doc.company));
 					refresh_field('customer_balance');

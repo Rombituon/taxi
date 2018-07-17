@@ -21,24 +21,25 @@ class AssignCommissionRule(Document):
 		elif self.active_date <= self.last_clearance_date:
 			frappe.throw(_("The active date need to be after last clearance date"))
 
-                Last_ACR = frappe.db.sql("""
+                last_acr = frappe.db.sql("""
                         select name from `tabAssign Commission Rule`
                         where driver = %s and docstatus = 1 and name != %s order by modified desc limit 1
                         """,(self.driver, self.name), as_dict=True)
 
-                Last_ACR_CLR = frappe.db.sql("""
+                last_acr_clr = frappe.db.sql("""
                         select name from `tabClearance With Driver`
                         where assign_com_rule = (select name from `tabAssign Commission Rule`
                         where driver = %s and docstatus = 1 and name != %s order by modified desc limit 1)
+			and docstatus = 1
                         """, (self.driver, self.name), as_dict=True)
 
-                if (len(Last_ACR_CLR) == 0 and len(Last_ACR) > 0):
+                if (len(last_acr_clr) == 0 and len(last_acr) > 0):
 
                         frappe.throw(_("The Assign Commission Rule {0} is submitted and not used with \
-                        any clearance, please modify it or do clearance first."). format(Last_ACR[0]['name']))
+                        any clearance, please modify it or do clearance first."). format(last_acr[0]['name']))
 
 
-#		self.check_driver_acrl()
+		self.check_driver_acrl()
 
 #	def onload(self):
 
@@ -79,56 +80,56 @@ class AssignCommissionRule(Document):
 
 	def check_driver_acrl(self):
 
-                AnyACRL = frappe.db.sql("""
-                select * from `tabAssign Commission Rule` where driver = %s and name != %s and docstatus != 2""", (self.driver, self.name), as_dict=True)
+                any_acrl = frappe.db.sql("""
+                select * from `tabAssign Commission Rule` where driver = %s and name != %s and docstatus = 0""", (self.driver, self.name), as_dict=True)
 		
 #     		frappe.msgprint(_("The AnyACRL is: {0}"). format(AnyACRL[0]['name']))
 		
-		if len(AnyACRL) > 0:
-                        frappe.throw(_("There is {0} saved and not submmited for this driver, please complete and submit it"). format(AnyACRL[0]['name']))
+		if len(any_acrl) > 0:
+                        frappe.throw(_("There is {0} saved and not submmited for this driver, please complete and submit it"). format(any_acrl[0]['name']))
 		
 #                else:
 #                        self.title = str(self.commission_percent) + "%" + "-" + str(self.weekly_fees) + "LBP"
 		
         def on_submit(self):
 
-		Last_ACR = frappe.db.sql("""
+		last_acr = frappe.db.sql("""
 			select name from `tabAssign Commission Rule`
                         where driver = %s and docstatus = 1 and name != %s order by modified desc limit 1
 			""",(self.driver, self.name), as_dict=True)
 
-		Last_ACR_CLR = frappe.db.sql("""
+		last_acr_clr = frappe.db.sql("""
 			select name from `tabClearance With Driver` 
 			where assign_com_rule = (select name from `tabAssign Commission Rule` 
 			where driver = %s and docstatus = 1 and name != %s order by modified desc limit 1)
 			""", (self.driver, self.name), as_dict=True)
 
-		if (len(Last_ACR_CLR) == 0 and len(Last_ACR) > 0):
+		if (len(last_acr_clr) == 0 and len(last_acr) > 0):
 			
                         frappe.throw(_("The Assign Commission Rule {0} is submitted and not used with \
-			any clearance, please modify it or do clearance first."). format(Last_ACR[0]['name']))
+			any clearance, please modify it or do clearance first."). format(last_acr[0]['name']))
 
 
 @frappe.whitelist()
-def get_values(AssignedDriver):
+def get_values(assigned_driver):
 
-	LastClearance = frappe.db.sql("""select name, clearance_date from `tabClearance With Driver` 
-			where docstatus = 0 and driver = %(driver_id)s order by clearance_date desc limit 3
-			""", {"driver_id": AssignedDriver}, as_dict=True)
+	last_clearance = frappe.db.sql("""select name, clearance_date from `tabClearance With Driver` 
+			where docstatus = 1 and driver = %(driver_id)s order by clearance_date desc limit 3
+			""", {"driver_id": assigned_driver}, as_dict=True)
 
-	LastAssigned = frappe.db.sql("""select name, active_date, commission_rule, commission_percent, weekly_fees from `tabAssign Commission Rule` 
+	last_assigned = frappe.db.sql("""select name, active_date, commission_rule, commission_percent, weekly_fees from `tabAssign Commission Rule` 
 			where docstatus = 1 and driver = %(driver_id)s order by active_date desc limit 1
-			""", {"driver_id": AssignedDriver}, as_dict=True)
+			""", {"driver_id": assigned_driver}, as_dict=True)
 
-	FirstTO = frappe.db.sql("""select assigned_driver, modified from `tabTrip Order`
+	first_to = frappe.db.sql("""select assigned_driver, modified from `tabTrip Order`
                         where docstatus = 1 and assigned_driver = %(driver_id)s order by modified asc limit 1
-                        """, {"driver_id": AssignedDriver}, as_dict=True)
+                        """, {"driver_id": assigned_driver}, as_dict=True)
 
-	HiringDate = frappe.db.get_value('Employee', {"name": AssignedDriver} ,'date_of_joining')
+	hiring_date = frappe.db.get_value('Employee', {"name": assigned_driver} ,'date_of_joining')
 
 #       self.hop_no_discounted  = frappe.db.get_value("Route Pricing Settings", "hop_no_discounted")
 
 
 #	frappe.msgprint(_("Number of rows of Last Clearance is: {0}"). format(len(LastClearance)))
 
-	return LastClearance, LastAssigned, FirstTO, HiringDate
+	return last_clearance, last_assigned, first_to, hiring_date

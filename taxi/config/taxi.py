@@ -40,11 +40,6 @@ def get_data():
                         "items": [
                                 {
                                         "type": "doctype",
-                                        "name": "Drivers",
-                                        "description": _("Drivers"),
-                                },
-                                {
-                                        "type": "doctype",
                                         "name": "Clearance With Driver",
                                         "description": _("Clearance With Driver"),
                                 },
@@ -78,12 +73,12 @@ def get_data():
                                         "type": "doctype",
                                         "name": "Type of Service",
                                         "description": _("Type of Service"),
-                                },
-				{
-					"type": "doctype",
-					"name": "Order Options For Subscription Hop Status",
-					"description": _("Order Options For Subscription Hop Status"),
-				}
+                                }
+#				{
+#					"type": "doctype",
+#					"name": "Order Options For Subscription Hop Status",
+#					"description": _("Order Options For Subscription Hop Status"),
+#				}
 			]
 		}
 

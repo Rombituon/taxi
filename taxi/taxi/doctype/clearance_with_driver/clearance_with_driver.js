@@ -67,10 +67,10 @@ frappe.ui.form.on('Clearance With Driver', {
         },
 	driver: function(frm) {
 		if (cur_frm.doc.driver) {
-			ClearVariables(frm);
+			clear_variables(frm);
 //			cur_frm.reset();
 //			var SelectedDriver = cur_frm.doc.driver;
-			GetClrVehStrt(frm);
+			get_clr_strt(frm);
 			get_values(frm);
 //			cur_frm.doc.reset();
 //			document.getElementById(cur_frm).reset();
@@ -82,8 +82,8 @@ frappe.ui.form.on('Clearance With Driver', {
 
         clearance_date: function(frm) {
                 if (cur_frm.doc.driver && cur_frm.doc.clearance_date) {
-                        ClearVariables(frm);
-                        GetClrVehStrt(frm);
+                        clear_variables(frm);
+                        get_clr_strt(frm);
                         get_values(frm);
                 }
         },
@@ -92,9 +92,9 @@ frappe.ui.form.on('Clearance With Driver', {
 	get_data: function(frm) {
 
 		if (cur_frm.doc.driver && cur_frm.doc.clearance_date) {
-			ClearVariables(frm);
+			clear_variables(frm);
 			get_driver_info(frm);
-			GetClrVehStrt(frm);
+			get_clr_strt(frm);
 			get_values(frm);
 		}
 	}
@@ -119,7 +119,7 @@ var get_driver_info = function(frm) {
 }
 
 
-var GetClrVehStrt = function(frm) {
+var get_clr_strt = function(frm) {
 
 //	var SelectedDriver = cur_frm.doc.driver;
 //	if (!cur_frm.doc.clearance_date) {
@@ -130,7 +130,7 @@ var GetClrVehStrt = function(frm) {
 //	}
 	frappe.call({
 //      	method: "taxi.taxi.doctype.trip_order.trip_order.get_vehicle",
-                method: "taxi.taxi.doctype.clearance_with_driver.clearance_with_driver.GetClrVehStrt",
+                method: "taxi.taxi.doctype.clearance_with_driver.clearance_with_driver.get_clr_strt",
                 args: {
                 	"driver": frm.doc.driver,
                		"clearance_date": frm.doc.clearance_date
@@ -203,8 +203,8 @@ var get_values = function(frm) {
 					if (cur_frm.doc.employment_type != "Commission") {	
 //					frappe.msgprint(__("Welcome Not Commission: {0}", [r.message[5][0]['total_maint']]));
 	                        		cur_frm.set_value("maintenance_amount", r.message[5][0]['total_maint']);
-	                               		cur_frm.set_value("amount_due_to_us", r.message[1]);
-//	                               		cur_frm.set_value("amount_due_to_driver", 0);
+	                               		cur_frm.set_value("amount_to_us", r.message[1]);
+//	                               		cur_frm.set_value("amount_to_driver", 0);
 	                               		cur_frm.set_value("driver_commission_amount", 0);
 	                               		cur_frm.set_value("no_of_driver_due_weekly_fees", 0);
 	                               		cur_frm.set_value("driver_due_weekly_fees", 0);
@@ -213,25 +213,32 @@ var get_values = function(frm) {
 
 					else {
 	                        		cur_frm.set_value("maintenance_amount", 0);
-//                                                cur_frm.set_value("amount_due_to_driver", 0);
                                                 cur_frm.set_value("no_of_driver_due_weekly_fees", flt(cur_frm.doc.duration_clearance) / 7);
 	                               		cur_frm.set_value("assign_com_rule", r.message[12][0]['name']);
 						cur_frm.set_value('commission_rule', r.message[12][0]['commission_rule']);
 						cur_frm.set_value('commission_percent', r.message[12][0]['commission_percent']);
 						cur_frm.set_value('weekly_fees', r.message[12][0]['weekly_fees']);
-                                                cur_frm.set_value("driver_commission_amount", flt(cur_frm.doc.total_orders_amount) * (1-flt(cur_frm.doc.commission_percent)/100));
-                                                cur_frm.set_value("driver_due_weekly_fees", flt(cur_frm.doc.no_of_driver_due_weekly_fees) * flt(cur_frm.doc.weekly_fees));
-
-                                                cur_frm.set_value("amount_due_to_driver_cal", cur_frm.doc.driver_commission_amount - cur_frm.doc.driver_due_weekly_fees);
-	
-	                               		cur_frm.set_value("amount_due_to_us", flt(r.message[1]) - flt(cur_frm.doc.amount_due_to_driver_cal));
+						cur_frm.set_value("driver_commission_amount", flt([[flt(cur_frm.doc.total_orders_amount) + flt(cur_frm.doc.total_subscription_orders_amount) + flt(cur_frm.doc.total_driver_compensation_amount)] * (1-flt(cur_frm.doc.commission_percent)/100)]));
+						cur_frm.set_value("driver_due_weekly_fees", flt(cur_frm.doc.no_of_driver_due_weekly_fees) * flt(cur_frm.doc.weekly_fees));
+						cur_frm.set_value("amount_due_to_driver_cal", cur_frm.doc.driver_commission_amount - cur_frm.doc.driver_due_weekly_fees);
+	                               		cur_frm.set_value("amount_to_us", flt(r.message[1]) - flt(cur_frm.doc.amount_due_to_driver_cal));
+						if (frm.doc.amount_to_us < 0) {
+							cur_frm.set_value("amount_to_us", flt(0));
+						}
 					}
 	                               		cur_frm.set_value("collected_money_out_of_orders", r.message[8][0]['total_col_mon_out']);
 	                               		cur_frm.set_value("delivered_payments_to_office", r.message[9][0]['total_delivered_mon']);
 	                               		cur_frm.set_value("net_cash", flt(cur_frm.doc.total_cash_orders_amount) + flt(cur_frm.doc.collected_money_within_orders) + flt(cur_frm.doc.collected_money_out_of_orders) - flt(cur_frm.doc.delivered_payments_to_office) - flt(cur_frm.doc.maintenance_amount));
-	                               		cur_frm.set_value("driver_cash_account_balance", r.message[1]);
-	                               		cur_frm.set_value("amount_due_to_us_cal", flt(r.message[1]) - flt(cur_frm.doc.amount_due_to_driver_cal));
-                                                cur_frm.set_value("amount_due_to_driver", cur_frm.doc.amount_due_to_driver_cal);
+						cur_frm.set_value("driver_cash_account_balance", r.message[1]);
+						cur_frm.set_value("clearance_revenue", flt(cur_frm.doc.total_orders_amount) + flt(cur_frm.doc.total_subscription_orders_amount) - flt(cur_frm.doc.amount_due_to_driver_cal));
+						cur_frm.set_value("amount_to_us_cal", flt(r.message[1]) - flt(cur_frm.doc.amount_due_to_driver_cal));
+						if (frm.doc.amount_to_us_cal < 0) {
+							cur_frm.set_value("amount_to_us_cal", flt(0));
+						}
+						cur_frm.set_value("amount_to_driver", flt(cur_frm.doc.amount_due_to_driver_cal) - flt(cur_frm.doc.driver_cash_account_balance));
+						if (frm.doc.amount_to_driver < 0) {
+							cur_frm.set_value("amount_to_driver", flt(0));
+						}
                         	}
                 	}
         	})
@@ -245,22 +252,28 @@ var filling_and_calculation = function(frm, statement) {
 	cur_frm.clear_table("statement_of_trips_orders");
 	var new_row;
 	var total_orders_amount = 0.00;
+	var total_subscription_orders_amount = 0.00;
+	var total_driver_compensation_amount = 0.00;
 	var total_cash_orders_amount = 0.00;
 	var total_credit_orders_amount = 0.00;
 	var collected_money_within_orders = 0.00;
 //	frappe.msgprint(__("Welcome Not Commission: {0}"));
 	$.each(statement, function(i, row) {
 //		frappe.msgprint(__("Welcome: {0}", [row.name]));
-		new_row = frappe.model.add_child(cur_frm.doc, "Driver Clearance Trips Orders", "statement_of_trips_orders");
+		new_row = frappe.model.add_child(cur_frm.doc, "Clearance Trips Orders", "statement_of_trips_orders");
 		new_row.trip_order = row.name;
 		new_row.desc = row.title;
-		new_row.date = row.transaction_date;
+		new_row.date = row.posting_date;
 		new_row.amount = row.grand_total;
 		new_row.cash = row.cash_amount;
 		new_row.credit = row.credit_amount;
 		new_row.money_collection = row.money_collection;
+		new_row.driver_compensation = row.driver_compensation;
+		new_row.total_price_for_subscription_order = row.total_price_for_subscription_order;
 		new_row.clearance_status = row.driver_clearance_status;
 		total_orders_amount = total_orders_amount + flt(row.grand_total);
+		total_subscription_orders_amount = total_subscription_orders_amount + flt(row.total_price_for_subscription_order);
+		total_driver_compensation_amount = total_driver_compensation_amount + flt(row.driver_compensation);
 		total_cash_orders_amount = total_cash_orders_amount + flt(row.cash_amount);
 		total_credit_orders_amount = total_credit_orders_amount + flt(row.credit_amount);
 		collected_money_within_orders = collected_money_within_orders + flt(row.money_collection);
@@ -268,9 +281,11 @@ var filling_and_calculation = function(frm, statement) {
 //	frappe.msgprint(__("Welcome Not Commission: {0}"));
 	refresh_field("statement_of_trips_orders");
 	cur_frm.set_value("total_orders_amount", total_orders_amount); 
+	cur_frm.set_value("total_subscription_orders_amount", total_subscription_orders_amount); 
 	cur_frm.set_value("total_cash_orders_amount", total_cash_orders_amount); 
 	cur_frm.set_value("total_credit_orders_amount", total_credit_orders_amount);
 	cur_frm.set_value("collected_money_within_orders", collected_money_within_orders);
+	cur_frm.set_value("total_driver_compensation_amount", total_driver_compensation_amount); 
 //	frappe.msgprint(__("Welcome Not Commission: {0}"));
 //	frappe.msgprint(__("Welcome Not Commission: {0}", [collected_money_within_orders]));
 //	frappe.msgprint(__("Welcome Not Commission: {0}", [r.message[5][0]['total_maint']]));
@@ -280,13 +295,13 @@ var filling_and_calculation = function(frm, statement) {
 		var duration_in_hour = frappe.datetime.get_hour_diff(frm.doc.statement_of_trips_orders[0]["date"], frm.doc.statement_of_trips_orders[child_table_length - 1]["date"]);
 		var duration_in_day = duration_in_hour / 24;
 
-		frappe.msgprint(__("Welcome Duration in Day: {0}", [duration_in_day]));
+//		frappe.msgprint(__("Welcome Duration in Day: {0}", [duration_in_day]));
 		cur_frm.set_value("duration_clearance", flt(duration_in_day));
 //		cur_frm.set_value("duration_clearance", 9);
 	}
 	else {	
 		cur_frm.set_value("duration_clearance", 0);
-		frappe.msgprint(__("Welcome Duration in Day: {0}", 0));
+//		frappe.msgprint(__("Welcome Duration in Day: {0}", 0));
 	}
 
 //	frappe.msgprint(__("Welcome Not Commission: {0}", [duration_in_day]));
@@ -295,13 +310,14 @@ var filling_and_calculation = function(frm, statement) {
 }
 
 
-var ClearVariables = function(frm) {
+var clear_variables = function(frm) {
 
-	frm.set_value('amount_due_to_us', "");
-	frm.set_value('amount_due_to_driver', "");
+	frm.set_value('amount_to_us', "");
+	frm.set_value('amount_to_driver', "");
 	frm.clear_table("statement_of_trips_orders");
         refresh_field("statement_of_trips_orders");
 	frm.set_value('total_orders_amount', "");
+	frm.set_value('total_subscription_orders_amount', "");
 	frm.set_value('total_cash_orders_amount', "");
 	frm.set_value('total_credit_orders_amount', "");
 	frm.set_value('collected_money_within_orders', "");
@@ -312,10 +328,11 @@ var ClearVariables = function(frm) {
 	frm.set_value('driver_commission_amount', "");
 	frm.set_value('no_of_driver_due_weekly_fees', "");
 	frm.set_value('driver_due_weekly_fees', "");
+	frm.set_value('total_driver_compensation_amount', "");
 	frm.set_value('amount_due_to_driver_cal', "");
 //	frm.set_value('driver_cash_account', "");
 	frm.set_value('driver_cash_account_balance', "");
-	frm.set_value('amount_due_to_us_cal', "");
+	frm.set_value('amount_to_us_cal', "");
 	frm.set_value('duration_clearance', "");
 	frm.set_value('receiving_payment_account', "");
 	frm.set_value('account_paid_from', "");

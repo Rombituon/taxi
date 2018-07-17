@@ -35,10 +35,10 @@ class TripOrder(AccountsController):
 
 		self.last_note_time = frappe.db.get_value('Trip Order', {'name': self.name}, 'last_note_time')
 		self.notified = frappe.db.get_value('Trip Order', {'name': self.name}, 'notified')
-		if not (self.customer):
+		if not (self.customer_name):
 			self.title = self.origination_place + "-" + self.final_destination
 		else:
-			self.title = self.customer + "-" + self.origination_place + "-" + self.final_destination
+			self.title = self.customer_name + "-" + self.origination_place + "-" + self.final_destination
 		if (self.credit_amount > 0 and self.money_collection > 0):
 			frappe.throw(_("Can not set money collection amount > 0 if credit amount > 0, please correct"))
 
@@ -148,11 +148,11 @@ class TripOrder(AccountsController):
 @frappe.whitelist()
 def get_settings():
 
-	DiscountedHopNo  = frappe.db.get_single_value('Route Pricing Settings', 'hop_no_discounted')
-	HopNoToReturnForNormalRating  = frappe.db.get_single_value('Route Pricing Settings', 'return_to_normal_rating_hop_no')
-	PriceForSecondHop  = frappe.db.get_single_value('Route Pricing Settings', 'second_hop_price')
+	discounted_hop_no  = frappe.db.get_single_value('Route Pricing Settings', 'hop_no_discounted')
+	hop_no_to_return_for_normal_rating  = frappe.db.get_single_value('Route Pricing Settings', 'return_to_normal_rating_hop_no')
+	price_for_second_hop  = frappe.db.get_single_value('Route Pricing Settings', 'second_hop_price')
 
-	return DiscountedHopNo, HopNoToReturnForNormalRating, PriceForSecondHop
+	return discounted_hop_no, hop_no_to_return_for_normal_rating, price_for_second_hop
 
 
 @frappe.whitelist()

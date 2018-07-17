@@ -110,11 +110,11 @@ class TaxiSubscription(AccountsController):
 @frappe.whitelist()
 def get_settings():
 
-	DiscountedHopNo  = frappe.db.get_single_value('Route Pricing Settings', 'hop_no_discounted')
-	HopNoToReturnForNormalRating  = frappe.db.get_single_value('Route Pricing Settings', 'return_to_normal_rating_hop_no')
-	PriceForSecondHop  = frappe.db.get_single_value('Route Pricing Settings', 'second_hop_price')
+	discounted_hop_no  = frappe.db.get_single_value('Route Pricing Settings', 'hop_no_discounted')
+	hop_no_to_return_for_normal_rating  = frappe.db.get_single_value('Route Pricing Settings', 'return_to_normal_rating_hop_no')
+	price_for_second_hop  = frappe.db.get_single_value('Route Pricing Settings', 'second_hop_price')
 
-	return DiscountedHopNo, HopNoToReturnForNormalRating, PriceForSecondHop
+	return discounted_hop_no, hop_no_to_return_for_normal_rating, price_for_second_hop
 
 
 @frappe.whitelist()

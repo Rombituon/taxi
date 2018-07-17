@@ -23,15 +23,15 @@ frappe.ui.form.on('Assign Commission Rule', {
 			frappe.call({
 				method: "taxi.taxi.doctype.assign_commission_rule.assign_commission_rule.get_values",
 				args: {
-					"AssignedDriver": frm.doc.driver
+					"assigned_driver": frm.doc.driver
 				},
                         	callback: function(r) {
 					if (r.message) {
 
 						if (r.message[0].length) {
 
-							frappe.msgprint(__("The joining date is: {0}", [r.message[3]]));
-							frappe.msgprint(__("Last Clearance Date: {0}", [r.message[0]]));
+//							frappe.msgprint(__("The joining date is: {0}", [r.message[3]]));
+//							frappe.msgprint(__("Last Clearance Date: {0}", [r.message[0]]));
 							var last_clr = r.message[0];
                                                 	cur_frm.set_value("last_clearance", last_clr[0]['name']);
                                                 	cur_frm.set_value("last_clearance_date", last_clr[0]['clearance_date']);
@@ -51,7 +51,7 @@ frappe.ui.form.on('Assign Commission Rule', {
 //							refresh_field("last_clearance");
 //							refresh_field("last_clearance_date");
 						} else {
-							frappe.msgprint(__("The joining date is: {0}", [r.message[3]]));
+//							frappe.msgprint(__("The joining date is: {0}", [r.message[3]]));
 //							frappe.msgprint(__("Last assigned crl is: {0}", [r.message[1][0]['name']]));
 							var hir_d1 = new Date (r.message[3]);
 							hir_d1.setHours (00);
