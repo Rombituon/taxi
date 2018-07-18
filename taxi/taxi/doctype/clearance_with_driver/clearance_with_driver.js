@@ -160,7 +160,7 @@ var get_clr_strt = function(frm) {
 				if (r.message[0]) {
                                 	cur_frm.set_value("vehicle", r.message[0]);
 				}
-				else {						
+				else if (frm.doc.employment_type != 'Commission' && frm.doc.employment_type != 'Bus Supplier'){
                                 	cur_frm.set_value("vehicle", "Please Select Vehicle");
 				}
 //				if (r.message[1][0]['modified'] == "") {
@@ -198,9 +198,13 @@ var get_values = function(frm) {
 //                              		cur_frm.set_value("last_clearance_date", last_clearance[0]['modified']);
 //	                        	cur_frm.set_value("cash_with_him", r.message[1]);
 //                                	cur_frm.set_value("last_payment_date", last_payment[0]['creation']);
-					filling_and_calculation(frm, statement);
+					if (cur_frm.doc.employment_type != 'Bus Supplier')
+						filling_and_calculation(frm, statement);
+					else
+						bus_filling_and_calculation(frm, statement);
+
 //					frappe.msgprint(__("Welcome Not Commission: {0}", [r.message[5][0]['total_maint']]));
-					if (cur_frm.doc.employment_type != "Commission") {	
+					if (cur_frm.doc.employment_type != "Commission" && cur_frm.doc.employment_type != "Bus Supplier") {	
 //					frappe.msgprint(__("Welcome Not Commission: {0}", [r.message[5][0]['total_maint']]));
 	                        		cur_frm.set_value("maintenance_amount", r.message[5][0]['total_maint']);
 	                               		cur_frm.set_value("amount_to_us", r.message[1]);
@@ -210,7 +214,18 @@ var get_values = function(frm) {
 	                               		cur_frm.set_value("driver_due_weekly_fees", 0);
 	                               		cur_frm.set_value("amount_due_to_driver_cal", 0);
 					}
+					else if (cur_frm.doc.employment_type == "Bus Supplier") {
 
+	                        		cur_frm.set_value("maintenance_amount", r.message[5][0]['total_maint']);
+	                               		cur_frm.set_value("amount_to_us", flt(frm.doc.bus_total_selling_price) - flt(frm.doc.bus_total_buying_price));
+//	                               		cur_frm.set_value("amount_to_driver", 0);
+	                               		cur_frm.set_value("driver_commission_amount", 0);
+	                               		cur_frm.set_value("no_of_driver_due_weekly_fees", 0);
+	                               		cur_frm.set_value("driver_due_weekly_fees", 0);
+	                               		cur_frm.set_value("amount_due_to_driver_cal", frm.doc.bus_total_buying_price);
+
+
+					}
 					else {
 	                        		cur_frm.set_value("maintenance_amount", 0);
                                                 cur_frm.set_value("no_of_driver_due_weekly_fees", flt(cur_frm.doc.duration_clearance) / 7);
@@ -245,7 +260,8 @@ var get_values = function(frm) {
 		refresh_field("statement_of_trips_orders");
 	}
 }
-	
+
+
 var filling_and_calculation = function(frm, statement) {
 //	frappe.msgprint(__("Welcome: {0}", [statement[0]['creation']]));
 //	frappe.msgprint(__("Welcome Not Commission: {0}"));
@@ -309,13 +325,86 @@ var filling_and_calculation = function(frm, statement) {
 
 }
 
+var bus_filling_and_calculation = function(frm, statement) {
+//	frappe.msgprint(__("Welcome: {0}", [statement[0]['creation']]));
+//	frappe.msgprint(__("Welcome Not Commission: {0}"));
+	cur_frm.clear_table("statement_of_bus_orders");
+	var new_row;
+	var total_orders_amount = 0.00;
+	var bus_total_buying_price = 0.00;
+	var bus_total_selling_price = 0.00;
+	var total_subscription_orders_amount = 0.00;
+	var total_driver_compensation_amount = 0.00;
+	var total_cash_orders_amount = 0.00;
+	var total_credit_orders_amount = 0.00;
+	var collected_money_within_orders = 0.00;
+//	frappe.msgprint(__("Welcome Not Commission: {0}"));
+	$.each(statement, function(i, row) {
+//		frappe.msgprint(__("Welcome: {0}", [row.name]));
+		new_row = frappe.model.add_child(cur_frm.doc, "Clearance Bus Orders", "statement_of_bus_orders");
+		new_row.trip_order = row.name;
+		new_row.desc = row.title;
+		new_row.date = row.posting_date;
+		new_row.amount = row.grand_total;
+		new_row.cash = row.cash_amount;
+		new_row.credit = row.credit_amount;
+		new_row.buying_price = row.buying_price;
+		new_row.selling_price = row.selling_price;
+		new_row.money_collection = row.money_collection;
+		new_row.driver_compensation = row.driver_compensation;
+		new_row.total_price_for_subscription_order = row.total_price_for_subscription_order;
+		new_row.clearance_status = row.driver_clearance_status;
+		total_orders_amount = total_orders_amount + flt(row.grand_total);
+		bus_total_buying_price = bus_total_buying_price + flt(row.buying_price);
+		bus_total_selling_price = bus_total_selling_price + flt(row.selling_price);
+		total_subscription_orders_amount = total_subscription_orders_amount + flt(row.total_price_for_subscription_order);
+		total_driver_compensation_amount = total_driver_compensation_amount + flt(row.driver_compensation);
+		total_cash_orders_amount = total_cash_orders_amount + flt(row.cash_amount);
+		total_credit_orders_amount = total_credit_orders_amount + flt(row.credit_amount);
+		collected_money_within_orders = collected_money_within_orders + flt(row.money_collection);
+	});
+//	frappe.msgprint(__("Welcome Not Commission: {0}"));
+	refresh_field("statement_of_bus_orders");
+	cur_frm.set_value("total_orders_amount", total_orders_amount); 
+	cur_frm.set_value("bus_total_buying_price", bus_total_buying_price); 
+	cur_frm.set_value("bus_total_selling_price", bus_total_selling_price); 
+	cur_frm.set_value("total_subscription_orders_amount", total_subscription_orders_amount); 
+	cur_frm.set_value("total_cash_orders_amount", total_cash_orders_amount); 
+	cur_frm.set_value("total_credit_orders_amount", total_credit_orders_amount);
+	cur_frm.set_value("collected_money_within_orders", collected_money_within_orders);
+	cur_frm.set_value("total_driver_compensation_amount", total_driver_compensation_amount); 
+//	frappe.msgprint(__("Welcome Not Commission: {0}"));
+//	frappe.msgprint(__("Welcome Not Commission: {0}", [collected_money_within_orders]));
+//	frappe.msgprint(__("Welcome Not Commission: {0}", [r.message[5][0]['total_maint']]));
+	var child_table_length = frm.doc.statement_of_trips_orders.length;
+//	frappe.msgprint(__("Welcome child_table_length: {0}", [child_table_length]));
+	if (child_table_length > 0) {
+		var duration_in_hour = frappe.datetime.get_hour_diff(frm.doc.statement_of_trips_orders[0]["date"], frm.doc.statement_of_trips_orders[child_table_length - 1]["date"]);
+		var duration_in_day = duration_in_hour / 24;
+
+//		frappe.msgprint(__("Welcome Duration in Day: {0}", [duration_in_day]));
+		cur_frm.set_value("duration_clearance", flt(duration_in_day));
+//		cur_frm.set_value("duration_clearance", 9);
+	}
+	else {	
+		cur_frm.set_value("duration_clearance", 0);
+//		frappe.msgprint(__("Welcome Duration in Day: {0}", 0));
+	}
+
+//	frappe.msgprint(__("Welcome Not Commission: {0}", [duration_in_day]));
+//	cur_frm.set_value("duration_clearance", frappe.datetime.get_day_diff(frm.doc.statement_of_trips_orders[0]["date"], frm.doc.statement_of_trips_orders[child_table_length - 1]["date"]));
+
+}
+
 
 var clear_variables = function(frm) {
 
 	frm.set_value('amount_to_us', "");
 	frm.set_value('amount_to_driver', "");
 	frm.clear_table("statement_of_trips_orders");
+	frm.clear_table("statement_of_bus_orders");
         refresh_field("statement_of_trips_orders");
+        refresh_field("statement_of_bus_orders");
 	frm.set_value('total_orders_amount', "");
 	frm.set_value('total_subscription_orders_amount', "");
 	frm.set_value('total_cash_orders_amount', "");

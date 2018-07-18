@@ -31,9 +31,17 @@ class ClearanceWithDriver(AccountsController):
         def on_cancel(self):
                 delete_gl_entries(voucher_type=self.doctype, voucher_no=self.name)
 
-		to_clr_count = frappe.db.sql("""update `tabTrip Order` set driver_clearance_status = "No"
-			where name in (select trip_order from `tabClearance With Driver Trips Orders` where parent = %s)
-			""", (self.name), as_dict=True)
+		if (self.employment_type == 'Bus Supplier'):
+
+			to_clr_count = frappe.db.sql("""update `tabTrip Order` set driver_clearance_status = "No"
+				where name in (select trip_order from `tabClearance Bus Orders` where parent = %s)
+				""", (self.name), as_dict=True)
+		else:
+
+			to_clr_count = frappe.db.sql("""update `tabTrip Order` set driver_clearance_status = "No"
+				where name in (select trip_order from `tabClearance Trips Orders` where parent = %s)
+				""", (self.name), as_dict=True)
+
 
 
         def on_submit(self):
@@ -48,9 +56,16 @@ class ClearanceWithDriver(AccountsController):
 
 	def update_to_clearance(self):
 
-		to_clr_count = frappe.db.sql("""update `tabTrip Order` set driver_clearance_status = "Yes"
-			where name in (select trip_order from `tabClearance With Driver Trips Orders` where parent = %s)
-			""", (self.name), as_dict=True)
+		if (self.employment_type == 'Bus Supplier'):
+
+			to_clr_count = frappe.db.sql("""update `tabTrip Order` set driver_clearance_status = "Yes"
+				where name in (select trip_order from `tabClearance Bus Orders` where parent = %s)
+				""", (self.name), as_dict=True)
+		else:
+
+			to_clr_count = frappe.db.sql("""update `tabTrip Order` set driver_clearance_status = "Yes"
+				where name in (select trip_order from `tabClearance Trips Orders` where parent = %s)
+				""", (self.name), as_dict=True)
 
 
 	def make_gl_entries(self):
@@ -232,7 +247,6 @@ def get_values(driver, clearance_date):
                                 where driver = %s and docstatus = 1 order by modified desc limit 1
                                 """, (driver), as_dict=True)
 
-
 	last_payment_date = frappe.db.sql(""" select posting_date from `tabPayment Entry`
                                 where payment_type = "Internal Transfer" and paid_from = (select money_collection_account from `tabEmployee` where name = %s)
                                 and paid_to in (select default_cash_account from `tabCompany`)
@@ -249,12 +263,26 @@ def get_values(driver, clearance_date):
 		clr_strt_date = last_clearance_date[0]['clearance_date']
 
 
-	to_statement = frappe.db.sql("""
-			select name, title, posting_date, grand_total, cash_amount, credit_amount, 
-			money_collection, driver_compensation, total_price_for_subscription_order, driver_clearance_status from `tabTrip Order`
-			where assigned_driver = %s and posting_date <= %s and driver_clearance_status not like "Yes" and driver_clearance_status is not NULL 
-			and docstatus = 1 order by posting_date desc
-			""", (driver, clearance_date), as_dict=True)
+	emp_type = frappe.db.get_value('Employee', {'name': driver}, 'employment_type')
+	if emp_type == 'Bus Supplier':
+
+		to_statement = frappe.db.sql("""
+				select name, title, posting_date, buying_price, selling_price, grand_total, cash_amount, credit_amount, 
+				money_collection, driver_compensation, total_price_for_subscription_order, driver_clearance_status from `tabTrip Order`
+				where assigned_driver = %s and posting_date <= %s and driver_clearance_status not like "Yes" 
+				and driver_clearance_status is not NULL and docstatus = 1
+				and type_of_service = 'Bus'
+				order by posting_date desc
+				""", (driver, clearance_date), as_dict=True)
+	else:
+
+		to_statement = frappe.db.sql("""
+				select name, title, posting_date, grand_total, cash_amount, credit_amount, 
+				money_collection, driver_compensation, total_price_for_subscription_order, driver_clearance_status from `tabTrip Order`
+				where assigned_driver = %s and posting_date <= %s and driver_clearance_status not like "Yes" 
+				and driver_clearance_status is not NULL
+				and docstatus = 1 order by posting_date desc
+				""", (driver, clearance_date), as_dict=True)
 
 	maint_statement = frappe.db.sql("""select name, total_claimed_amount, total_sanctioned_amount, vehicle_log, employee 
 			from `tabExpense Claim` where employee = %s and posting_date > %s and posting_date <= %s  and docstatus = 1
