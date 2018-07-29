@@ -87,6 +87,14 @@ frappe.ui.form.on('Trip Order', {
 //			}
 //		});
 
+
+		frm.set_query('customer', function(doc) {
+			return { 
+				query: "erpnext.controllers.queries.customer_query" 
+			};
+		});
+
+
                 frm.set_query("address_title", function(doc) {
                         return {
                                 query: 'frappe.contacts.doctype.address.address.address_query',
@@ -181,7 +189,6 @@ frappe.ui.form.on('Trip Order', {
 				}
 			};
 		});
-
 	},
 
 	update: function(frm, cdt, cdn) {
@@ -255,6 +262,9 @@ frappe.ui.form.on('Trip Order', {
 						}
 						cur_frm.set_value("subscriber_or_not", r.message[1]);
 						cur_frm.set_value("subscription_ref", r.message[0]);
+						if (frm.doc.subscriber_or_not == "No") {						
+							cur_frm.set_value("not_subsc_order", 1);
+						}
 //						msgprint(r.message);
 //						cur_frm.set_value("customer_balance", r.message);
 //						frm.doc.customer_balance = 1000
