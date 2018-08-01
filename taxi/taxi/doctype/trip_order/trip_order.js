@@ -698,7 +698,7 @@ var hops_calculation = function(frm, cdt, cdn) {
 								var waiting_time = moment(row.waiting, "HH:mm:ss A");
 								var waiting_time_hr = waiting_time.hour();
 								var waiting_time_minute = waiting_time.minute();
-								row.waiting_price = flt((((waiting_time_hr / 60) + waiting_time_minute) / 15 ) * 2500);
+								row.waiting_price = flt((((waiting_time_hr * 60) + waiting_time_minute) / 15 ) * 2500);
 								row.hop_price = flt(row.selected_metric);
 								row.trip_price = (flt(row.hop_price) + flt(row.waiting_price) + flt(row.other_price)) * flt(frm.doc.rate_factor_for_the_vehicle) + serv_add_price;
 							}
