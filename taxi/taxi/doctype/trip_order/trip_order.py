@@ -36,11 +36,14 @@ class TripOrder(AccountsController):
 		self.last_note_time = frappe.db.get_value('Trip Order', {'name': self.name}, 'last_note_time')
 		self.notified = frappe.db.get_value('Trip Order', {'name': self.name}, 'notified')
 #		if not (self.customer_name):
-		if (self.workflow_state == "Draft" or self.workflow_state == "Cancelled" ):
-			self.title = self.workflow_state + "-" + self.origination_place + "-" + self.final_destination
+		if self.work_flow_status:
+			if (self.workflow_state == "Draft" or self.workflow_state == "Cancelled"):
+				self.title = self.workflow_state + "-" + self.origination_place + "-" + self.final_destination
+			else:
+				self.title = self.work_flow_status + "-" + self.origination_place + "-" + self.final_destination
+#				self.title = self.customer_name + "-" + self.origination_place + "-" + self.final_destination
 		else:
-			self.title = self.work_flow_status + "-" + self.origination_place + "-" + self.final_destination
-#			self.title = self.customer_name + "-" + self.origination_place + "-" + self.final_destination
+			self.title = self.origination_place + "-" + self.final_destination
 		if (self.credit_amount > 0 and self.money_collection > 0):
 			frappe.throw(_("Can not set money collection amount > 0 if credit amount > 0, please correct"))
 
