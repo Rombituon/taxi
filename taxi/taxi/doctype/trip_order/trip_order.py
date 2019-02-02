@@ -50,7 +50,7 @@ class TripOrder(AccountsController):
 		self.outstanding_amount = self.credit_amount
 
 #                self.posting_date = self.transaction_date
-                self.due_date = self.posting_date
+		self.due_date = self.posting_date
 
 
 	def on_cancel(self):
