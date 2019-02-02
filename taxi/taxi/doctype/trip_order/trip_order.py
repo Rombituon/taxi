@@ -60,8 +60,7 @@ class TripOrder(AccountsController):
 		delete_gl_entries(voucher_type=self.doctype, voucher_no=self.name)
 
 
-
-        def on_submit(self):
+	def on_submit(self):
 		
 #		if self.cash_amount > 0:
 #			if self.order_status != "Done":
@@ -75,8 +74,7 @@ class TripOrder(AccountsController):
 		self.outstanding_amount = self.credit_amount
 #                self.posting_date = self.transaction_date
 		if (self.grand_total != 0):
-	                self.make_gl_entries()
-
+			self.make_gl_entries()
 
 	def make_gl_entries(self):
 
@@ -89,7 +87,7 @@ class TripOrder(AccountsController):
 			"debit_in_account_currency": self.grand_total,
 			"against_voucher": self.name,
 			"against_voucher_type": self.doctype
-                })
+		})
 
 		trip_gl_entry = self.get_gl_dict({
 			"account": self.income_account,
@@ -142,12 +140,12 @@ class TripOrder(AccountsController):
                 	})
 
 			paid_to_gl_entry = self.get_gl_dict({
-                        	"account": self.driver_cash_account,
-                        	"against": self.customer,
-                        	"debit": self.money_collection,
-                        	"debit_in_account_currency": self.money_collection,
-                        	"cost_center": self.cost_center
-                	})
+				"account": self.driver_cash_account,
+				"against": self.customer,
+				"debit": self.money_collection,
+				"debit_in_account_currency": self.money_collection,
+				"cost_center": self.cost_center
+			})
 
 			make_gl_entries([customer_gl_entries, paid_to_gl_entry], cancel=(self.docstatus == 2),
 				update_outstanding="Yes", merge_entries=False)
@@ -358,10 +356,10 @@ def get_customer_subsc(date, party_type, party, docname=None):
 
 #	frappe.msgprint("The receiving date is {0}". format(date))
 
-        get_subscription = frappe.db.sql("""select name, weekly_off1, weekly_off2 from `tabTaxi Subscription` where customer = %s and active = 'Yes'
+	get_subscription = frappe.db.sql("""select name, weekly_off1, weekly_off2 from `tabTaxi Subscription` where customer = %s and active = 'Yes'
 		and end_date >= date(%s)
-                and docstatus = 1
-                """, (party, date), as_dict=True)
+		and docstatus = 1
+		""", (party, date), as_dict=True)
 
 
 	if (len (get_subscription) > 0):
@@ -404,7 +402,7 @@ def get_customer_subsc(date, party_type, party, docname=None):
 							and hop_subsc_status = "Available"
 							and (`order` = "Buy" or `order` = "Compensate")
 							and parent in (select name from `tabTrip Order` where date(posting_date) = date(%s))
-		        		       		""", (d['hop_to'], d['subsc_ref'], date), as_dict=True)
+							""", (d['hop_to'], d['subsc_ref'], date), as_dict=True)
 					else:
 
 						get_subs_hops_info =  frappe.db.sql("""select parent as trip_order, docstatus, creation, `order`, 
@@ -414,7 +412,7 @@ def get_customer_subsc(date, party_type, party, docname=None):
 							and hop_subsc_status = "Available"
 							and (`order` = "Buy" or `order` = "Compensate")
 							and parent in (select name from `tabTrip Order` where date(posting_date) = date(%s))
-        					       	""", (d['hop_from'], d['hop_to'], d['subsc_ref'], date), as_dict=True)
+							""", (d['hop_from'], d['hop_to'], d['subsc_ref'], date), as_dict=True)
 
 
 					if (len(get_subs_hops_info) == 0):
@@ -484,7 +482,7 @@ def get_customer_subsc(date, party_type, party, docname=None):
 							and hop_subsc_status = "Available"
 							and (`order` = "Buy" or `order` = "Compensate")
 							and parent in (select name from `tabTrip Order` where date(posting_date) = date(%s))
-		        		       		""", (d['hop_to'], d['subsc_ref'], date), as_dict=True)
+							""", (d['hop_to'], d['subsc_ref'], date), as_dict=True)
 			
 					else:
 						get_subs_hops_info =  frappe.db.sql("""select parent as trip_order, docstatus, creation, `order`, 
@@ -494,7 +492,7 @@ def get_customer_subsc(date, party_type, party, docname=None):
 							and hop_subsc_status = "Available"
 							and (`order` = "Buy" or `order` = "Compensate")
 							and parent in (select name from `tabTrip Order` where date(posting_date) = date(%s))
-        					       	""", (d['hop_from'], d['hop_to'], d['subsc_ref'], date), as_dict=True)
+							""", (d['hop_from'], d['hop_to'], d['subsc_ref'], date), as_dict=True)
 
 
 #					frappe.msgprint("This is the get_subs_hops_info {0} and its length is {1} and the Subscribed in subscription ref {2} and these are its hops {3} and {4}". format(party, subscribed, get_subscription, get_subsc_hops[0], get_subsc_hops[1]))
@@ -528,4 +526,3 @@ def get_customer_subsc(date, party_type, party, docname=None):
 
 
 #	frappe.msgprint("At Python: The customer {0} has this subscription: {1}". format(party, get_subscription))
-
